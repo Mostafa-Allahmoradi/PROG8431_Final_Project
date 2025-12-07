@@ -4,6 +4,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
 
 
 class DataPreprocessor:
@@ -55,6 +56,16 @@ class DataPreprocessor:
             self.df[col] = le.fit_transform(self.df[col])
             self.label_encoders[col] = le # Save encoder for future decoding
 
+    # def impute_missing(self):
+    #     numeric_cols = self.df.select_dtypes(include="number").columns
+    #     cat_cols = self.df.select_dtypes(include="number").columns
+    #
+    #     #Numeric > Median
+    #     self.df[numeric_cols] = SimpleImputer(strategy="median").fit_transform(self.df[numeric_cols])
+    #
+    #     #Categoricals > Most frequent
+    #     if len(cat_cols) > 0:
+    #         self.df[cat_cols] = SimpleImputer(strategy="most_frequent").fit_transform(self.df[cat_cols])
     #Optional additions\
     def weight_risk(self):
         #High Caloire intake and weight gain risk

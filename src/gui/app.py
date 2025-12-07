@@ -199,7 +199,10 @@ if app_mode == "Data Analysis":
         # st.pyplot(fig_corr)
         nutrition_eda.correlation_heatmap()
         st.markdown("---")
-        # Histograms
+        #pca
+        nutrition_eda.pca_variance_plot()
+        st.markdown("---")
+        # Histograms'
         nutrition_eda.plot_histograms(feature_list=['calories', 'fat'])
         st.markdown("---")
         # Boxplots

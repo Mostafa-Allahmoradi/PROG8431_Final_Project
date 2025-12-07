@@ -19,6 +19,7 @@ from Data_Preprocessing.feature_engineering import DataPreprocessor
 class NutritionEDA:
     def __init__(self, file_path: str):
 
+        self.preprocessor = None
         try:
             self.df = pd.read_csv(file_path)
             st.toast("Dataset loaded successfully!")
@@ -40,14 +41,15 @@ class NutritionEDA:
         cleaner.clean_pipe()
         self.df = cleaner.get_clean_data()
         st.toast("Data cleaning completed!")
-    
+
+
     def perform_feature_engineering(self):
-        preprocessor = DataPreprocessor(self.df)
-        preprocessor.convert_height_meters()
-        preprocessor.calculate_bmi()
-        preprocessor.add_obesity_features()
-        preprocessor.encode_categorical_features()
-        self.df = preprocessor.df
+        self.preprocessor = DataPreprocessor(self.df)
+        self.preprocessor.convert_height_meters()
+        self.preprocessor.calculate_bmi()
+        self.preprocessor.add_obesity_features()
+        self.preprocessor.encode_categorical_features()
+        self.df = self.preprocessor.df
         st.toast("Feature engineering completed!")
     
     def variable_types(self):
@@ -82,17 +84,7 @@ class NutritionEDA:
         st.dataframe(outlier_df)
 
         return outlier_df
-    
-    def correlation_heatmap(self):
-        st.subheader("Correlation Heatmap")
 
-        numeric_cols = self.df.select_dtypes(include=np.number)
-
-        fig, ax = plt.subplots(figsize=(12, 8))
-        sns.heatmap(numeric_cols.corr(), cmap="coolwarm", ax=ax)
-        st.pyplot(fig)
-
-        return numeric_cols.corr()
     
     def plot_histograms(self, feature_list=None):
         st.subheader("Histograms for Numerical Variables")
@@ -148,6 +140,40 @@ class NutritionEDA:
                 results[col] = self.df.groupby("disease")[col].mean()
 
         return results
+
+    def correlation_heatmap(self):
+        st.subheader("Correlation Heatmap")
+
+        numeric_cols = self.df.select_dtypes(include=np.number)
+
+        fig, ax = plt.subplots(figsize=(12, 8))
+        sns.heatmap(numeric_cols.corr(), cmap="coolwarm", ax=ax)
+        st.pyplot(fig)
+
+        return numeric_cols.corr()
+
+    def pca_variance_plot(self, n_components=5):
+        if self.preprocessor is None:
+            st.warning("Please run feature engineering first!")
+            return None
+
+        numeric_cols = self.preprocessor.df.select_dtypes(include=np.number).columns.tolist()
+        self.preprocessor.scale_features(numeric_cols)
+        _, pca = self.preprocessor.apply_pca(n_components=n_components, plot_variance=False)
+
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.bar(range(1, n_components + 1), pca.explained_variance_ratio_, alpha=0.7)
+        ax.step(range(1, n_components + 1), np.cumsum(pca.explained_variance_ratio_), where='mid')
+        ax.set_xlabel("Principal Component")
+        ax.set_ylabel("Explained Variance Ratio")
+        ax.set_title("PCA Explained Variance")
+        ax.grid(alpha=0.3)
+
+        st.pyplot(fig)
+
+        return pca.explained_variance_ratio_
+
     
 
 
