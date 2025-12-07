@@ -47,7 +47,7 @@ st.set_page_config(
 st.sidebar.title("Navigation")
 
 # Main Mode Selection
-app_mode = st.sidebar.radio("Go to:", ["Data Analysis", "Machine Learning"])
+app_mode = st.sidebar.radio("Go to:", ["Overview", "Problem Statement", "Data Analysis", "Machine Learning"])
 
 # -------------------------------------------------------------------------
 # Data Loading & Engineering Logic
@@ -100,6 +100,68 @@ def load_and_prep_data():
     return df
 
 df = load_and_prep_data()
+
+# -------------------------------------------------------------------------
+# APP MODE: Overview
+# -------------------------------------------------------------------------
+if app_mode == "Overview":
+    st.header("Final Project - Obesity Risk Prediction Using Machine Learning")
+
+    if df is not None:  
+        st.markdown("""
+        **Course:** PROG8431 - Data Analysis Mathematics, Algorithms and Modeling
+        <br>
+        **Fall 2025 - Section 1**
+        
+        **Instructor:** Professor David Espinosa Carrillo and Professor Yun Qian Miao
+        
+        **Group members:**
+        - Mostafa Allahmoradi - 9087818
+        - Cemil Caglar Yapici - 9081058
+        - Jarius Bedward - 8841640
+                    
+        #### This application performs data analysis and machine learning classification to predict obesity risk based on daily nutrition and lifestyle data.
+        """)
+
+# -------------------------------------------------------------------------
+# APP MODE: Problem Statement
+# -------------------------------------------------------------------------
+if app_mode == "Problem Statement":
+    st.header("Problem Statement: Investigating the Relationship Between High Calorie and Fat Intake and Obesity Risk")
+
+    if df is not None:  
+        st.markdown("""
+        **Area of Focus:** Obesity is one of the most critical global health challenges. Diet quality—specifically the daily consumption of dietary fat and total calorie intake—is widely recognized as a primary determinant of this condition. While higher consumption of fat and calories contributes to obesity risk, the precise relationship between individual intake levels and the likelihood of obesity requires further clarification. Understanding this relationship is essential for designing targeted dietary interventions and improving nutritional guidelines.
+
+        #### Research Question: 
+        Is there a statistically significant difference in daily calorie and fat intake between individuals diagnosed with obesity and those without the condition?
+
+        #### Research Hypothesis
+        * **Null Hypothesis ($H_0$):** There is no significant difference in the mean daily caloric and fat intake between individuals diagnosed with obesity and those without the condition. 
+            $$H_0: \mu_{obesity} \leq \mu_{healthy}$$
+
+        * **Alternative Hypothesis ($H_1$):** Individuals diagnosed with obesity have a significantly higher mean daily caloric and fat intake compared to individuals without the condition. 
+            $$H_1: \mu_{obesity} > \mu_{healthy}$$
+
+        #### Research Summary: Diet Quality as a Determinant of Obesity Risk
+        Introduction The escalating prevalence of obesity represents one of the most pressing public health challenges of the modern era. While the etiology of obesity is multifactorial—involving genetics, environment, and metabolism—diet quality remains the most modifiable and significant determinant. This research project focuses specifically on the quantitative relationship between dietary habits and obesity. By isolating daily caloric intake and dietary fat consumption as primary variables, this study aims to clarify the extent to which these specific nutritional factors distinguish individuals diagnosed with obesity from those who maintain a healthy weight.
+                    
+        The Problem Space Despite the general consensus that “overeating” contributes to weight gain, the precise statistical relationship between specific intake thresholds and clinical obesity requires rigorous validation. Public health guidelines often provide generalized advice, but understanding the statistical significance of intake differences is crucial for creating evidence-based interventions. The problem statement highlights a need to move beyond anecdotal assumptions and toward a data-driven understanding of how high consumption of fat and total calories correlates with the likelihood of an obesity diagnosis. This clarification is essential for the development of targeted dietary guidelines that are not only theoretically sound but statistically validated against real-world population data.
+        
+        Methodological Framework The core of this research is a comparative analysis designed to answer a specific question: Is there a statistically significant difference in daily calorie and fat intake between individuals diagnosed with obesity and those without the condition?
+
+        To answer this, the study employs a classical hypothesis testing framework. This statistical approach allows the research to move beyond simple observation and determine if the differences in diet between the two groups are substantial enough to be considered non-random.            
+        
+        Hypothesis Analysis The study is grounded in two opposing hypotheses that will be tested against the dataset:
+            
+        * The Null Hypothesis ($H_0$): This hypothesis assumes the skeptical position. It posits that there is no significant statistical difference in the mean daily caloric and fat intake between obese and non-obese individuals. In statistical terms ($H_0: \mu_{obesity} \leq \mu_{healthy}$), this suggests that the mean intake of the obese population is less than or equal to that of the healthy population. If the data fails to reject this hypothesis, it would suggest that factors other than total calorie and fat volume (such as genetics, metabolic adaptation, or activity levels) may play a larger role in the disease's pathology than simply the amount of food consumed.
+            
+        * The Alternative Hypothesis ($H_1$): This hypothesis represents the anticipated outcome of the study. It proposes that individuals diagnosed with obesity exhibit a significantly higher mean daily caloric and fat intake compared to their non-obese counterparts ($H_1: \mu_{obesity} > \mu_{healthy}$). Confirming this hypothesis provides the statistical evidence needed to assert that higher intake levels are consistent, predictable markers of obesity in the target population.
+        
+        Implications and Conclusion Validating the Alternative Hypothesis is critical for the future of nutritional intervention. If this study confirms a statistically significant difference in intake levels, it reinforces the validity of caloric and fat restriction as a primary treatment modality. Furthermore, quantifying how significant this difference is can help healthcare providers design more precise nutritional plans. By validating the link between specific dietary metrics and obesity risk, this research contributes to a foundation for improved public health strategies, more effective weight management programs, and a deeper understanding of the nutritional drivers of the global obesity crisis.            
+        
+        """)
+    
 
 # -------------------------------------------------------------------------
 # APP MODE: DATA ANALYSIS
