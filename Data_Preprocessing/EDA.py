@@ -9,7 +9,7 @@ import sys
 
 # --- PATH SETUP ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '../..'))
+project_root = os.path.abspath(os.path.join(current_dir, '../'))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
@@ -19,17 +19,16 @@ from Data_Preprocessing.feature_engineering import DataPreprocessor
 class NutritionEDA:
     def __init__(self, file_path: str):
 
-        self.df = pd.read_csv(file_path)
-        st.success("Dataset loaded successfully!")
+        try:
+            self.df = pd.read_csv(file_path)
+            st.toast("Dataset loaded successfully!")
+        except Exception as e:
+            st.toast(f"Error loading dataset: {e}")
+            self.df = pd.DataFrame()
 
     def overview(self):
         st.subheader("Dataset Overview")
         st.dataframe(self.df.head())
-
-        st.subheader("Data Info")
-        buffer = []
-        self.df.info(buf=buffer.append)
-        st.text("\n".join(buffer))
 
         st.subheader("Descriptive Statistics")
         st.dataframe(self.df.describe(include='all').T)
@@ -37,25 +36,19 @@ class NutritionEDA:
         return self.df.head()
     
     def clean_data(self):
-        st.subheader("Data Cleaning")
         cleaner = DataCleaner(self.df)
         cleaner.clean_pipe()
         self.df = cleaner.get_clean_data()
-        st.success("Data cleaning completed!")
-        st.dataframe(self.df.head())
-        return self.df
+        st.toast("Data cleaning completed!")
     
     def perform_feature_engineering(self):
-        st.subheader("Feature Engineering")
         preprocessor = DataPreprocessor(self.df)
         preprocessor.convert_height_meters()
         preprocessor.calculate_bmi()
         preprocessor.add_obesity_features()
         preprocessor.encode_categorical_features()
         self.df = preprocessor.df
-        st.success("Feature engineering completed!")
-        st.dataframe(self.df.head())
-        return self.df
+        st.toast("Feature engineering completed!")
     
     def variable_types(self):
         numeric = self.df.select_dtypes(include=np.number).columns.tolist()
@@ -136,22 +129,23 @@ class NutritionEDA:
     def obesity_intake_comparison(self):
         st.subheader("Calorie & Fat Intake Comparison by Disease Status")
 
-        if "Disease" not in self.df.columns:
+        if "disease" not in self.df.columns:
             st.error("Disease column not found in dataset.")
             return None
 
-        calories = ["Calories", "Daily Calorie Target"]
-        fats = ["Fat"]
+        calories = ["calories", "daily_calorie_target"]
+        fats = ["fat"]
 
         results = {}
 
         for col in calories + fats:
             if col in self.df.columns:
                 fig, ax = plt.subplots(figsize=(6, 4))
-                sns.boxplot(x=self.df["Disease"], y=self.df[col], ax=ax)
+                sns.boxplot(x=self.df["disease"], y=self.df[col], ax=ax)
+                ax.tick_params(axis='x', labelrotation=45)
                 ax.set_title(f"{col} by Disease Status")
                 st.pyplot(fig)
-                results[col] = self.df.groupby("Disease")[col].mean()
+                results[col] = self.df.groupby("disease")[col].mean()
 
         return results
     

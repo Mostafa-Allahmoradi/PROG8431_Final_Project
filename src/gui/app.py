@@ -4,6 +4,8 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+import os
+import sys
 
 # Scikit-Learn Imports
 from sklearn.model_selection import train_test_split
@@ -25,6 +27,14 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
+
+# --- PATH SETUP ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '../..'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from Data_Preprocessing.EDA import NutritionEDA
 
 # -------------------------------------------------------------------------
 # Page Configuration
@@ -52,53 +62,21 @@ app_mode = st.sidebar.radio("Go to:", ["Overview", "Problem Statement", "Data An
 # -------------------------------------------------------------------------
 # Data Loading & Engineering Logic
 # -------------------------------------------------------------------------
-@st.cache_data
 def load_and_prep_data():
     try:
-        # Tries to look in a data folder, falls back to root
-        try:
-            df = pd.read_csv('./data/raw/detailed_meals_macros_.csv')
-        except FileNotFoundError:
-            df = pd.read_csv('detailed_meals_macros_.csv')
+        # --- Data Cleaning ---
+        nutrition_eda.clean_data()
+
+        # --- Feature Engineering ---
+        nutrition_eda.perform_feature_engineering()
+        df = nutrition_eda.df
     except Exception as e:
         st.error(f"Error loading file: {e}")
         return None
-
-    # --- Data Cleaning ---
-    df = df.interpolate()
-    df.columns = [c.strip() for c in df.columns]
-    
-    if 'Disease' in df.columns:
-        df['Disease'] = df['Disease'].str.strip()
-
-    # --- Feature Engineering ---
-    if 'Height' in df.columns:
-        df['Height_m'] = df['Height'] / 100
-        
-    if 'Weight' in df.columns and 'Height_m' in df.columns:
-        df['BMI'] = df['Weight'] / (df['Height_m'] ** 2)
-        
-    # Target: Obesity
-    df['Obesity'] = np.where(df['BMI'] >= 30, 1, 0)
-    
-    # Activity Numeric Map
-    activity_map = {
-        "Sedentary": 0, "Lightly Active": 1, "Moderately Active": 2, 
-        "Very Active": 3, "Extremely Active": 4
-    }
-    
-    if df['Activity Level'].dtype == 'O':
-        df['activity_level_numeric'] = df['Activity Level'].map(activity_map)
-    else:
-        df['activity_level_numeric'] = df['Activity Level']
-
-    # Weight Gain Risk
-    df["Weight_Gain_Risk"] = np.where(
-       (df['Calories'] > 2500) & (df['activity_level_numeric'] < 2), 1, 0
-    )
     
     return df
 
+nutrition_eda = NutritionEDA('./data/raw/detailed_meals_macros_.csv')
 df = load_and_prep_data()
 
 # -------------------------------------------------------------------------
@@ -110,7 +88,7 @@ if app_mode == "Overview":
     if df is not None:  
         st.markdown("""
         **Course:** PROG8431 - Data Analysis Mathematics, Algorithms and Modeling
-        <br>
+
         **Fall 2025 - Section 1**
         
         **Instructor:** Professor David Espinosa Carrillo and Professor Yun Qian Miao
@@ -160,8 +138,7 @@ if app_mode == "Problem Statement":
         
         Implications and Conclusion Validating the Alternative Hypothesis is critical for the future of nutritional intervention. If this study confirms a statistically significant difference in intake levels, it reinforces the validity of caloric and fat restriction as a primary treatment modality. Furthermore, quantifying how significant this difference is can help healthcare providers design more precise nutritional plans. By validating the link between specific dietary metrics and obesity risk, this research contributes to a foundation for improved public health strategies, more effective weight management programs, and a deeper understanding of the nutritional drivers of the global obesity crisis.            
         
-        """)
-    
+        """)    
 
 # -------------------------------------------------------------------------
 # APP MODE: DATA ANALYSIS
@@ -170,13 +147,13 @@ if app_mode == "Data Analysis":
     st.title("Exploratory Data Analysis & Statistics")
     
     if df is not None:
-        st.subheader("Dataset Preview")
-        st.dataframe(df.head())
 
         # Descriptive Stats
-        with st.expander("Descriptive Statistics"):
-            st.write(df.describe())
-
+        nutrition_eda.overview()
+        st.markdown("---")
+        nutrition_eda.variable_types()
+        st.markdown("---")
+        nutrition_eda.detect_outliers()
         st.markdown("---")
         
         # Hypothesis Testing
@@ -186,40 +163,50 @@ if app_mode == "Data Analysis":
         
         with col1:
             st.subheader("Fat Intake vs. Obesity")
-            group_sick = df[df['Obesity'] == 1]['Fat']
-            group_healthy = df[df['Obesity'] == 0]['Fat']
+            group_sick = df[df['obesity'] == 1]['fat']
+            group_healthy = df[df['obesity'] == 0]['fat']
             t_stat, p_val = stats.ttest_ind(group_sick, group_healthy, equal_var=False)
             
             st.write(f"**T-statistic:** {t_stat:.4f}")
             st.write(f"**P-value:** {p_val:.4f}")
             
             fig_fat, ax_fat = plt.subplots(figsize=(6, 4))
-            sns.boxplot(x='Obesity', y='Fat', data=df, palette='Set2', hue='Obesity', legend=False, ax=ax_fat)
+            sns.boxplot(x='obesity', y='fat', data=df, palette='Set2', hue='obesity', legend=False, ax=ax_fat)
             st.pyplot(fig_fat)
 
         with col2:
             st.subheader("Calorie Intake vs. Obesity")
-            group_sick_cal = df[df['Obesity'] == 1]['Calories']
-            group_healthy_cal = df[df['Obesity'] == 0]['Calories']
+            group_sick_cal = df[df['obesity'] == 1]['calories']
+            group_healthy_cal = df[df['obesity'] == 0]['calories']
             t_stat_cal, p_val_cal = stats.ttest_ind(group_sick_cal, group_healthy_cal, equal_var=False)
             
             st.write(f"**T-statistic:** {t_stat_cal:.4f}")
             st.write(f"**P-value:** {p_val_cal:.4f}")
             
             fig_cal, ax_cal = plt.subplots(figsize=(6, 4))
-            sns.boxplot(x='Obesity', y='Calories', data=df, palette='Set2', hue='Obesity', legend=False, ax=ax_cal)
+            sns.boxplot(x='obesity', y='calories', data=df, palette='Set2', hue='obesity', legend=False, ax=ax_cal)
             st.pyplot(fig_cal)
 
         st.markdown("---")
         
         # Correlation
-        st.header("2. Correlation Analysis")
-        numerical_df = df.select_dtypes(include=[np.number])
-        corr_matrix = numerical_df.corr(method='pearson')
+        # st.header("2. Correlation Analysis")
+        # numerical_df = df.select_dtypes(include=[np.number])
+        # corr_matrix = numerical_df.corr(method='pearson')
         
-        fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', linewidths=0.5, ax=ax_corr)
-        st.pyplot(fig_corr)
+        # fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
+        # sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', linewidths=0.5, ax=ax_corr)
+        # st.pyplot(fig_corr)
+        nutrition_eda.correlation_heatmap()
+        st.markdown("---")
+        # Histograms
+        nutrition_eda.plot_histograms(feature_list=['calories', 'fat'])
+        st.markdown("---")
+        # Boxplots
+        nutrition_eda.boxplots(feature_list=['calories', 'fat'])
+        st.markdown("---")
+        # Obesity Intake Comparison
+        nutrition_eda.obesity_intake_comparison()
 
 # -------------------------------------------------------------------------
 # APP MODE: MACHINE LEARNING
@@ -243,7 +230,7 @@ elif app_mode == "Machine Learning":
 
     if df is not None:
         # Data Preparation
-        target_col = 'Obesity'
+        target_col = 'obesity'
         X = df.drop([target_col], axis=1)
         y = df[target_col]
 
