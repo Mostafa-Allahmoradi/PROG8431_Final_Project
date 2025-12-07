@@ -37,6 +37,12 @@ This application performs data analysis and machine learning classification to p
    pip install -r requirements.txt
    ```
 
+3 ***Run The Streamlit Application**
+
+    ```bash
+    streamlit run src/gui/app.py
+    ```
+
 ### 🤝 Contributing
 
 This is a Final Project Protocol developed for PROG8245. If any questions arise do not hesitate to contact the project member.
