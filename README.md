@@ -45,7 +45,7 @@ This application performs data analysis and machine learning classification to p
 
 ### 🤝 Contributing
 
-This is a Final Project Protocol developed for PROG8245. If any questions arise do not hesitate to contact the project member.
+This is a Final Project Protocol developed for PROG8431. If any questions arise do not hesitate to contact the project member.
 
 ### References:
 
