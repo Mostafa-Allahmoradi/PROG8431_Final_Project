@@ -36,6 +36,41 @@ class DecisionTreeModel:
         return self.model.fit(self.x_train, self.y_train)
 
 
+    def plot_tree(self, feature_names=None, class_names=None):
+            """Plot the actual decision tree structure."""
+            if self.model is None:
+                st.error("Train the model first to plot the tree.")
+                return
+
+
+            if feature_names is  None:
+                feature_names= [f"Feature_{i}" for i in range(self.x_train.shape[1])]
+            else:
+                feature_names = list(feature_names)
+
+
+
+            if class_names is  None:
+                class_names = ["Non-Obese", "Obese"]
+
+
+
+            st.subheader("Decision Tree Structure")
+            fig, ax = plt.subplots(figsize=(20, 10))
+            plot_tree(
+                self.model,
+                feature_names=feature_names if feature_names else [f"Feature_{i}" for i in
+                                                                   range(self.x_train.shape[1])],
+                class_names=class_names if class_names else ["Non-Obese", "Obese"],
+                filled=True,
+                rounded=True,
+                fontsize=10,
+                ax=ax
+            )
+            st.pyplot(fig)
+
+
+
     def evaluate(self):
         """
         Evaluates the trained Decision Tree model.
@@ -81,39 +116,6 @@ class DecisionTreeModel:
             "confusion_matrix": cm,
             "feature_importance": importance_df if hasattr(self.model, "feature_importances_") else None
         }
-
-    def plot_tree(self, feature_names=None, class_names=None):
-            """Plot the actual decision tree structure."""
-            if self.model is None:
-                st.error("Train the model first to plot the tree.")
-                return
-
-
-            if feature_names is  None:
-                feature_names= [f"Feature_{i}" for i in range(self.x_train.shape[1])]
-            else:
-                feature_names = list(feature_names)
-
-
-
-            if class_names is  None:
-                class_names = ["Non-Obese", "Obese"]
-
-
-
-            st.subheader("Decision Tree Structure")
-            fig, ax = plt.subplots(figsize=(20, 10))
-            plot_tree(
-                self.model,
-                feature_names=feature_names if feature_names else [f"Feature_{i}" for i in
-                                                                   range(self.x_train.shape[1])],
-                class_names=class_names if class_names else ["Non-Obese", "Obese"],
-                filled=True,
-                rounded=True,
-                fontsize=10,
-                ax=ax
-            )
-            st.pyplot(fig)
 
         # ------------------------------------------------------
         # PREDICTION ON NEW DATA

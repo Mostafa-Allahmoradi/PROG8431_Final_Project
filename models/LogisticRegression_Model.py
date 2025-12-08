@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import streamlit as st
 import seaborn as sns
@@ -11,8 +12,13 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 class LogisticRegressionModel:
     def __init__(self, x, y, test_size=0.25, random_state=42):
         # Convert sparse to dense if needed
-        if hasattr(x, "toarray"):
+        if isinstance(x, pd.DataFrame):
+            if "bmi" not in x.columns:
+                raise ValueError("DataFrame must contain a 'Fat' column")
+            x = x[["bmi"]].values
+        elif hasattr(x, "toarray"):
             x = x.toarray()
+            x = x[:, [0]]
 
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
             x, y, test_size=test_size, random_state=random_state, stratify=y
@@ -21,13 +27,29 @@ class LogisticRegressionModel:
         self.scaler = StandardScaler()
         self.y_pred = None
 
-    def train(self, C=1.0, max_iter=1000):
-        # Scale features
+    def train(self, c=1.0, max_iter=1000):
+        # Scale only fat feature
         self.x_train = self.scaler.fit_transform(self.x_train)
         self.x_test = self.scaler.transform(self.x_test)
 
-        self.model = LogisticRegression(C=C, max_iter=max_iter)
+        self.model = LogisticRegression(C=c, max_iter=max_iter)
         self.model.fit(self.x_train, self.y_train)
+
+    def plot_logistic_curve(self):
+        if self.model is None:
+            st.error("Train the model first.")
+            return
+        x_sorted = np.linspace(self.x_train.min(), self.x_train.max(), 300).reshape(-1, 1)
+        prob = self.model.predict_proba(x_sorted)[:, 1]
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.scatter(self.x_train, self.y_train, color="blue", alpha=0.5, label="Actual")
+        ax.plot(x_sorted, prob, color="red", linewidth=2, label="Fitted Curve")
+        ax.set_xlabel("Scaled BMI")
+        ax.set_ylabel("Probability of Obese")
+        ax.set_title("Logistic Regression: Obese vs BMI")
+        ax.legend()
+        st.pyplot(fig)
 
     def evaluate(self):
         if self.model is None:
@@ -69,6 +91,8 @@ class LogisticRegressionModel:
             "confusion_matrix": cm,
             "coefficients": coef_df
         }
+
+
 
     def predict(self, new_data):
         if self.model is None:

@@ -29,6 +29,26 @@ class KNNModel:
     # ------------------------------------------------------
     def train(self):
         return self.model.fit(self.x_train, self.y_train)
+
+    def plot_knn_curve(self, max_k=20):
+        # plots accuracy vs number of neighbours (K)
+
+        st.subheader("KNN Accuracy vs Number of Neighbors")
+        accuracies = []
+
+        for k in range(1, max_k + 1):
+            temp_model = KNeighborsClassifier(n_neighbors=k)
+            temp_model.fit(self.x_train, self.y_train)
+            preds = temp_model.predict(self.x_test)
+            accuracies.append(accuracy_score(self.y_test, preds))
+        fig, ax = plt.subplots()
+        ax.plot(range(1, max_k + 1), accuracies, marker="o")
+        ax.set_xlabel("Number of Neighbors (K)")
+        ax.set_ylabel("Accuracy")
+        ax.set_title("KNN Accuracy Curve")
+
+        st.pyplot(fig)
+
     # ------------------------------------------------------
     # EVALUATION
     # ------------------------------------------------------
@@ -72,24 +92,7 @@ class KNNModel:
             "confusion_matrix": cm
         }
 
-    def plot_knn_curve(self, max_k=20):
-    #plots accuracy vs number of neighbours (K)
 
-        st.subheader("KNN Accuracy vs Number of Neighbors")
-        accuracies = []
-
-        for k in range(1, max_k + 1):
-            temp_model = KNeighborsClassifier(n_neighbors=k)
-            temp_model.fit(self.x_train, self.y_train)
-            preds = temp_model.predict(self.x_test)
-            accuracies.append(accuracy_score(self.y_test, preds))
-        fig, ax = plt.subplots()
-        ax.plot(range(1, max_k + 1), accuracies, marker="o")
-        ax.set_xlabel("Number of Neighbors (K)")
-        ax.set_ylabel("Accuracy")
-        ax.set_title("KNN Accuracy Curve")
-
-        st.pyplot(fig)
     # ------------------------------------------------------
     # PREDICTION ON NEW DATA
     # ------------------------------------------------------
