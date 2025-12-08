@@ -118,11 +118,11 @@ class DataPreprocessor:
 
     #Scaling
     #
-    # def scale_features(self, features_col: list):
-    #     scaler = StandardScaler()
-    #     self.x_scaled = pd.DataFrame(
-    #         scaler.fit_transform(self.df[features_col]), columns=features_col
-    #     )
+    def scale_features(self, features_col: list):
+        scaler = StandardScaler()
+        self.x_scaled = pd.DataFrame(
+            scaler.fit_transform(self.df[features_col]), columns=features_col
+        )
 
 
     # Feature and Target preparation

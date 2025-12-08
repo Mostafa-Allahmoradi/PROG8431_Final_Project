@@ -173,7 +173,10 @@ class NutritionEDA:
             st.warning("Please run feature engineering first!")
             return None
 
-        numeric_cols = self.preprocessor.df.select_dtypes(include=np.number).columns.tolist()
+        numeric_cols = [
+            "calories", "protein", "fat", "sugar", "sodium",
+            "carbohydrates", "fiber", "height_m", "weight", "bmi"
+        ]
         self.preprocessor.scale_features(numeric_cols)
         _, pca = self.preprocessor.apply_pca(n_components=n_components, plot_variance=False)
 

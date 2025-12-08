@@ -13,8 +13,6 @@ class LogisticRegressionModel:
     def __init__(self, x, y, test_size=0.25, random_state=42):
         # Convert sparse to dense if needed
         if isinstance(x, pd.DataFrame):
-            if "bmi" not in x.columns:
-                raise ValueError("DataFrame must contain a 'Fat' column")
             x = x[["bmi"]].values
         elif hasattr(x, "toarray"):
             x = x.toarray()
@@ -24,13 +22,9 @@ class LogisticRegressionModel:
             x, y, test_size=test_size, random_state=random_state, stratify=y
         )
         self.model = None
-        self.scaler = StandardScaler()
         self.y_pred = None
 
     def train(self, c=1.0, max_iter=1000):
-        # Scale only fat feature
-        self.x_train = self.scaler.fit_transform(self.x_train)
-        self.x_test = self.scaler.transform(self.x_test)
 
         self.model = LogisticRegression(C=c, max_iter=max_iter)
         self.model.fit(self.x_train, self.y_train)
@@ -94,19 +88,21 @@ class LogisticRegressionModel:
 
 
 
-    def predict_probabilistic(self, new_data):
+    def predict_probabilistic(self, new_data=None):
         if self.model is None:
             st.error("Model must be trained before calling predict().")
             return None
+
         if new_data is None:
-            data_scaled =self.x_test
+            data =self.x_test
         else:
             if isinstance(new_data, pd.DataFrame):
-                new_data = new_data[["bmi"]].values
-            data_scaled = self.scaler.transform(new_data)
-        probs = self.model.predict_proba(data_scaled)[:,1]
+                data = new_data[["bmi"]].values
+            else:
+                data = np.array(new_data).reshape(-1, 1)
+        probs = self.model.predict_proba(data)[:,1]
 
         st.subheader("Probabilistic Reasoning of Being Obese")
-        df_probs = pd.DataFrame({"Probability_Obese": probs})
-        st.dataframe(df_probs)
+        df_probs = pd.DataFrame({"bmi": data.flatten(), "Probability_Obese": probs})
+        st.dataframe(df_probs.reset_index(drop=True))
         return df_probs
