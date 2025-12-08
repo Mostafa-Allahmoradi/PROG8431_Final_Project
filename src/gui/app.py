@@ -327,10 +327,19 @@ elif app_mode == "Machine Learning":
 
 
         elif model_selection == "Random Forest":
-            n_est = st.sidebar.slider("Number of Trees", 10, 200, 100)
-            max_d = st.sidebar.slider("Max Depth", 1, 20, 5)
-            model = RandomForestModel(x, y, n_estimators=n_est, max_depth=max_d)
+            n_est = st.sidebar.slider("Number of Trees", 2, 10, 5)
+            max_d = st.sidebar.slider("Max Depth", 1, 10, 5)
+            n_plot = st.sidebar.slider("Number of Trees to visualize", 1)
+            model = RandomForestModel(df=x.join(y), target_col="obesity", n_estimators=n_est, max_depth=max_d)
             st.subheader(f"Random Forest (Trees={n_est}), Max Depth={max_d}")
+
+            #train model
+            with st.spinner(f"Training {model_selection}..."):
+                model.train()
+                model.evaluate()
+
+            model.plot_tree(n_trees=n_plot)
+
 
 
 

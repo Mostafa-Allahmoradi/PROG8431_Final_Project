@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.tree import plot_tree
 
 
 class RandomForestModel:
-    def __init__(self, x,y, n_estimators=100, max_depth=None , criterion="gini", test_size= 0.25, random_state = 42):
+    def __init__(self, df, target_col="obesity", features=None, n_estimators=7, max_depth=None , criterion="gini", test_size= 0.25, random_state = 42):
         """
         Initialize the Random Forest model class.
 
@@ -24,16 +25,53 @@ class RandomForestModel:
         - criterion : "gini" or "entropy"
         """
         # Convert sparse to desne if neede
-        if hasattr(x, "toarray"):
-            x = x.toarray()
+        if features is None:
+            #Default feature set
+            features = ["calories", "fat", "protein", "carbohydrates", "sugar", "fiber", "sodium"]
+
+        for f in features:
+            if f not in df.columns:
+                raise ValueError(f"Feature{f} not found")
+        if target_col not in df.columns:
+            raise ValueError(f"Target column {target_col} not found")
+        self.features = features
+        self.target_col = target_col
+        self.x = df[features].values
+        self.y = df[target_col].values
+
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            x, y, test_size=test_size, random_state=random_state
+            self.x, self.y, test_size=test_size, random_state=random_state, stratify=self.y
         )
-        self.model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion, random_state=random_state)
+        self.model=RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion, random_state=random_state)
         self.y_pred = None
 
     def train(self):
-        return self.model.fit(self.x_train, self.y_train)
+        self.model.fit(self.x_train, self.y_train)
+
+        return self.model
+
+    def plot_tree(self, n_trees=7):
+        if self.model is None:
+            st.error("Train the model first to plot")
+            return
+        n_trees = min(n_trees, len(self.model.estimators_))
+        st.subheader(f"Random Forest: Visualizing {n_trees} Trees")
+
+        for i in range(n_trees):
+            fig, ax = plt.subplots(figsize=(20, 10))
+            plot_tree(
+                self.model.estimators_[i],
+                feature_names=self.features,
+                class_names=[str(c) for c in self.model.classes_],
+                filled=True,
+                rounded=True,
+                proportion=True,
+                fontsize=10,
+                ax=ax
+            )
+            ax.set_title(f"Tree {i + 1} of {len(self.model.estimators_)}")
+            st.pyplot(fig)
+
 
     def evaluate(self):
 
