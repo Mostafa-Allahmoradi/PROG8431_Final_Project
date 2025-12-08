@@ -94,18 +94,19 @@ class LogisticRegressionModel:
 
 
 
-    def predict(self, new_data):
+    def predict_probabilistic(self, new_data):
         if self.model is None:
             st.error("Model must be trained before calling predict().")
             return None
+        if new_data is None:
+            data_scaled =self.x_test
+        else:
+            if isinstance(new_data, pd.DataFrame):
+                new_data = new_data[["bmi"]].values
+            data_scaled = self.scaler.transform(new_data)
+        probs = self.model.predict_proba(data_scaled)[:,1]
 
-        if hasattr(new_data, "toarray"):
-            new_data = new_data.toarray()
-
-        new_data_scaled = self.scaler.transform(new_data)
-        preds = self.model.predict(new_data_scaled)
-
-        st.subheader("Prediction on New Data")
-        st.dataframe(pd.DataFrame({"Predictions": preds}))
-
-        return preds
+        st.subheader("Probabilistic Reasoning of Being Obese")
+        df_probs = pd.DataFrame({"Probability_Obese": probs})
+        st.dataframe(df_probs)
+        return df_probs

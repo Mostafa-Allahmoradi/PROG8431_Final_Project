@@ -253,14 +253,18 @@ elif app_mode == "Machine Learning":
             #Sidebar for options for hyperparameters
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
             max_iter_val = st.sidebar.slider("Max. Iterations", 100, 5000, 1000)
-
-
+            use_prob = st.sidebar.checkbox("Show Probability", value=True) #checkbox
             #initalize
             model = LogisticRegressionModel(x, y)
             model.train(c=c_val, max_iter=max_iter_val)
 
             st.subheader(f"Logistic Regression on BMI (C={c_val}), max_iter={max_iter_val})")
             model.plot_logistic_curve()
+            model.evaluate()
+
+            #SHow probabilistic reasoning
+            if use_prob:
+                model.predict_probabilistic()
 
         elif model_selection == "K-NN":
             k_neighbors = st.sidebar.slider("Number of Neighbors (K)", 1, 20, 5)
