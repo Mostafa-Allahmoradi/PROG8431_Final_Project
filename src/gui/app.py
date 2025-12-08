@@ -265,6 +265,11 @@ elif app_mode == "Machine Learning":
             model = KNNModel(x, y, n_neighbors=k_neighbors)
             st.subheader(f"K-NN (K={k_neighbors})")
 
+            with st.spinner(f"Training {model_selection}..."):
+                model.train()
+                model.evaluate()
+            model.plot_knn_curve(max_k=20)
+
         elif model_selection == "Support Vector Machine":
             kernel = st.sidebar.selectbox("Kernel",  ["rbf", "linear", "poly", "sigmoid"], index=0)
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
