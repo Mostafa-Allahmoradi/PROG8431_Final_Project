@@ -1,56 +1,34 @@
+import streamlit as st
+import seaborn as sns
 import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 class DecisionTreeModel:
-    def __init__(self, df: pd.DataFrame, target_column: str, test_size: float = 0.2, random_state: int = 42):
+    def __init__(self, x, y, test_size=0.25, random_state=42, max_depth=None, criterion="gini"):
         """
-        Initialize the Decision Tree model class.
-
+     but
         Parameters:
-        - df : preprocessed DataFrame
-        - target_column : name of the target variable
-        - test_size : size of the test split
+        - x : feature matrix (NumPy array or sparse matrix)
+        - y : target vector
+        - test_size : test split
         - random_state : reproducibility
-        """
-        self.df = df
-        self.target_column = target_column
-        self.test_size = test_size
-        self.random_state = random_state
-
-        # Split features/target
-        self.X = self.df.drop(columns=[self.target_column])
-        self.y = self.df[self.target_column]
-
-        # Train-test split
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            self.X, self.y, test_size=self.test_size, random_state=self.random_state
-        )
-
-        # Model placeholder
-        self.model = None
-        self.predictions = None
-
-
-    def build_model(self, max_depth=None, criterion="gini"):
-        """
-        Build and train the Decision Tree classifier.
-
-        Parameters:
-        - max_depth : limits tree depth
+        - max_depth : max depth of tree
         - criterion : "gini" or "entropy"
         """
-        self.model = DecisionTreeClassifier(
-            max_depth=max_depth,
-            criterion=criterion,
-            random_state=self.random_state
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            x, y, test_size=test_size, random_state=random_state
         )
-        self.model.fit(self.X_train, self.y_train)
-        return self.model
+        self.model = DecisionTreeClassifier(max_depth=max_depth, criterion=criterion, random_state=random_state)
+        self.y_pred = None
+
+    def train(self):
+        return self.model.fit(self.x_train, self.y_train)
 
 
-    def evaluate_model(self):
+    def evaluate(self):
         """
         Evaluates the trained Decision Tree model.
 
@@ -58,34 +36,53 @@ class DecisionTreeModel:
         A dictionary of Streamlit-friendly outputs.
         """
         if self.model is None:
-            raise ValueError("Model has not been trained yet. Call build_model() first.")
+            st.error("Model has not been trained yet. Call build_model() first.")
+            return None
 
+        st.subheader("Decision Tree Model Evaluation:")
         # Predictions
-        self.predictions = self.model.predict(self.X_test)
+        self.y_pred = self.model.predict(self.x_test)
 
-        # Metrics
-        accuracy = accuracy_score(self.y_test, self.predictions)
-        report = classification_report(self.y_test, self.predictions, output_dict=False)
-        cm = confusion_matrix(self.y_test, self.predictions)
+        acc =  accuracy_score(self.y_test, self.y_pred)
+        st.write(f"### Accuracy: `{acc:.4f}`")
+        # Classification Report
+        report = classification_report(self.y_test, self.y_pred, output_dict=True)
+        st.write("### Classification Report")
+        st.dataframe(pd.DataFrame(report).T)
+        # Confusion matrix
+        cm = confusion_matrix(self.y_test, self.y_pred)
+        st.write("### Confusion Matrix")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
 
-        results = {
-            "accuracy": accuracy,
+        # Feature importance
+        if hasattr(self.model, "feature_importances_"):
+            importance_df = pd.DataFrame({
+                "Feature": range(self.x_train.shape[1]),  # since x is a matrix
+                "Importance": self.model.feature_importances_
+            }).sort_values(by="Importance", ascending=False)
+        st.write("### Feature Importance")
+        st.dataframe(importance_df)
+
+        return {
+            "accuracy": acc,
             "classification_report": report,
-            "confusion_matrix": cm
+            "confusion_matrix": cm,
+            "feature_importance": importance_df if hasattr(self.model, "feature_importances_") else None
         }
-        return results 
 
-
-    def get_feature_importance(self):
-        """
-        Returns feature importance in a Streamlit-friendly format.
-        """
+        # ------------------------------------------------------
+        # PREDICTION ON NEW DATA
+        # ------------------------------------------------------
+    def predict(self, new_data):
         if self.model is None:
-            raise ValueError("Model has not been trained yet. Call build_model() first.")
+            st.error("Model must be trained before calling predict().")
+            return None
 
-        importance_df = pd.DataFrame({
-            "feature": self.X.columns,
-            "importance": self.model.feature_importances_
-        }).sort_values(by="importance", ascending=False)
-
-        return importance_df
+        st.subheader("Prediction on New Data")
+        preds = self.model.predict(new_data)
+        st.dataframe(pd.DataFrame({"Predictions": preds}))
+        return preds

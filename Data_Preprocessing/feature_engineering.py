@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 
@@ -20,10 +22,13 @@ class DataPreprocessor:
     def __init__(self, df: pd.DataFrame):
 
         self.df= df.copy()
-        self.x_scaled = None #Store scaled feature matrix
+        self.x = None #Store  feature matrix
         self.y = None #Store target vector
+        self.preprocessor = None
         self.label_encoders = {} #Store encoders for categorical vairables
-
+        self.text_cols = ["breakfast_suggestion", "lunch_suggestion",
+                          "dinner_suggestion", "snack_suggestion"]
+        self.x_scaled = None
         #Feature Creation
     def convert_height_meters(self, height_col: str = "height"):
         #Converts height from cm to m
@@ -76,24 +81,42 @@ class DataPreprocessor:
             (self.df["calories"] > 2500 )& (self.df["activity_level"] < 2), 1, 0
         )
 
-    #Scaling
+    def build_preprocessor(self, numeric_cols=None, categorical_cols=None, max_text_features=100):
+        if numeric_cols is None:
+            numeric_cols = self.df.select_dtypes(include=np.number).columns.tolist()
+            numeric_cols = [c for c in numeric_cols if c != "obesity"]
 
-    def scale_features(self, features_col: list):
-        scaler = StandardScaler()
-        self.x_scaled = pd.DataFrame(
-            scaler.fit_transform(self.df[features_col]), columns=features_col
+        if categorical_cols is None:
+            categorical_cols = ["activity_level", "dietary_preference"]
+
+        # Combine text columns into one
+        self.df["all_meals"] = self.df[self.text_cols].agg(" ".join, axis=1)
+
+        self.preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", StandardScaler(), numeric_cols),
+                ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols),
+                ("text", TfidfVectorizer(max_features=max_text_features), "all_meals")
+            ]
         )
+    #Scaling
+    #
+    # def scale_features(self, features_col: list):
+    #     scaler = StandardScaler()
+    #     self.x_scaled = pd.DataFrame(
+    #         scaler.fit_transform(self.df[features_col]), columns=features_col
+    #     )
 
 
-    #Feature and Target preparation
+    # Feature and Target preparation
     def prepare_features_and_target(self, feature_cols: list, target_col: str = "obesity"):
         #Finalize x_scaled and target vector y
-        self.scale_features(feature_cols)
         self.y = self.df[target_col]
+        self.x = self.preprocessor.fit_transform(self.df)
+        return self.x, self.y
 
-    def get_processed_data(self):
-        # Return processed features and target
-        return self.x_scaled, self.y
+
+
 
     #Dimension Reduction techniques (High correlation_Filter & PCA)
     def high_correlation_filter(self, threshold: float = 0.9, plot_heatmap: bool =  True):

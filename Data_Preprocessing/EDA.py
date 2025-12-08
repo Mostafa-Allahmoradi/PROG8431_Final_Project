@@ -18,8 +18,9 @@ from Data_Preprocessing.feature_engineering import DataPreprocessor
 
 class NutritionEDA:
     def __init__(self, file_path: str):
-
         self.preprocessor = None
+        self.x = None
+        self.y = None
         try:
             self.df = pd.read_csv(file_path)
             st.toast("Dataset loaded successfully!")
@@ -49,7 +50,18 @@ class NutritionEDA:
         self.preprocessor.calculate_bmi()
         self.preprocessor.add_obesity_features()
         self.preprocessor.encode_categorical_features()
-        self.df = self.preprocessor.df
+        numeric_cols = ['calories', 'protein', 'fat', 'sugar', 'sodium',
+                        'carbohydrates', 'fiber', 'height_m', 'weight', 'bmi']
+        categorical_cols = ['activity_level', 'dietary_preference']
+        self.preprocessor.build_preprocessor(
+            numeric_cols=numeric_cols,
+            categorical_cols=categorical_cols,
+            max_text_features=100
+        )
+        self.x, self.y = self.preprocessor.prepare_features_and_target(
+            feature_cols=[],  # not needed for ColumnTransformer
+            target_col='obesity'
+        )
         st.toast("Feature engineering completed!")
     
     def variable_types(self):

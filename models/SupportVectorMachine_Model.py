@@ -1,67 +1,88 @@
 import pandas as pd
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
+import streamlit as st
+import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 
 
-class SVMClassifier:
+class SupportVectorMachineModel:
+    def __init__(self, x, y, test_size=0.25, random_state=42):
     #Uses Support Vector Machine classifier for obesity classification
     #Uses selected features: age, activity level & dietary preference
 
-    def __init__(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series):
-
-        #Initlaize classifier with features and split data
-        self.x_train = x_train
-        self.x_test = x_test
-        self.y_train = y_train
-        self.y_test = y_test
+    # Convert sparse to desne if neede
+        if hasattr(x, "toarray"):
+         x = x.toarray()
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            x, y, test_size=test_size, random_state=random_state
+        )
         self.model = None
+        self.y_pred = None
 
 
-    def train(self, kernel="rbf", c=1.0, gamma= "scale"): #rbf sets the type of SVM kernel which determines how the SVM transforms the input to find a decsion boundary rbf is radial basis function whcih is non-linear and mostly used
+    def train(self, kernel="rbf", c=1.0, gamma= "scale", probability=False): #rbf sets the type of SVM kernel which determines how the SVM transforms the input to find a decsion boundary rbf is radial basis function whcih is non-linear and mostly used
         #C=1.0 controls the trade-off between correctly classifying points and keeping the decision boundary smooth for avoiding overfitting
         #Gamma=scale is the kernal coefficient which controls how far influence ofa  single training point
         #Train SVM model
-        self.model = SVC(kernel=kernel, C=c, gamma=gamma)
-
+        self.model = SVC(kernel=kernel, C=c, gamma=gamma, probability=probability)
         self.model.fit(self.x_train, self.y_train)
-        print(f"Support Vector Machine trained with kernal={kernel}, C={c}, gamma={gamma}")
 
     def evaluate(self):
-        #evaluate the model with classification report and confusion matrix
-        y_pred = self.model.predict(self.x_test)
-        print("Classification Report:\n", classification_report(self.y_test, y_pred))
+        if self.model is None:
+            st.error("Model has not been trained yet. Call build_model() first.")
+            return None
 
-        cm = confusion_matrix(self.y_test, y_pred)
-        ConfusionMatrixDisplay(cm).plot(cmap="Blues")
-        plt.title("SVM Confusion Matrix")
-        plt.show()
+        st.subheader("Support Vector Machine Evaluation")
+        # Predictions
+        self.y_pred = self.model.predict(self.x_test)
 
-    def predict(self, x_new: pd.DataFrame):
-        #Make predictions on new data
-        return self.model.predict(x_new)
+        # Accuracy
+        acc = accuracy_score(self.y_test, self.y_pred)
+        st.write(f"### Accuracy: `{acc:.4f}`")
+        # Classification Report
+        report = classification_report(self.y_test, self.y_pred, output_dict=True)
+        st.write("### Classification Report")
+        st.dataframe(pd.DataFrame(report).T)
+        # Confusion matrix
+        cm = confusion_matrix(self.y_test, self.y_pred)
+        st.write("### Confusion Matrix")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
 
-    def predict_proba(self, x_new: pd.DataFrame):
-        #Return class probability for new data
-        if hasattr(self.model, "predict_proba"): #hasattr checks if an object has a specific attribute or method
-            return self.model.predict_proba(x_new)
+
+        return {
+            "accuracy": acc,
+            "classification_report": report,
+            "confusion_matrix": cm,
+
+        }
+
+    #Prediction on New Data
+    def predict(self, new_data):
+        if self.model is None:
+            st.error("Model must be trained before calling predict().")
+            return None
+
+        if hasattr(new_data, "toarray"):
+            new_data = new_data.toarray()
+
+        st.subheader("Prediction on New Data")
+        preds = self.model.predict(new_data)
+        st.dataframe(pd.DataFrame({"Predictions": preds}))
+        return preds
+    def predict_proba(self, new_data):
+        if self.model is None:
+            st.error("Model must be trained before calling predict_proba().")
+            return None
+        if hasattr(new_data, "toarray"):
+            new_data = new_data.toarray()
+        if hasattr(self.model, "predict_proba"):
+            return self.model.predict_proba(new_data)
         else:
-            raise AttributeError("SVM model was not trained with probability=true")
-
-
-
-
-#Example usage
-# if __name__ == "__main__":
-#     # Assume X_scaled and y are already loaded from your preprocessing pipeline
-#     feature_cols = ["age", "activity_level", "dietary_preference"]
-#     X_selected = x_scaled[feature_cols]
-#
-#     # Initialize SVM classifier
-#     svm_clf = SVMClassifier(X_selected, y)
-#
-#     # Train and evaluate
-#     svm_clf.train(kernel='rbf', C=1.0, gamma='scale')
-#     svm_clf.evaluate()
-# Optional: predict new data
-# y_new_pred = svm_clf.predict(X_new_df)
+            st.error("SVM was not trained with probability=True")
+            return None

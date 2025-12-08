@@ -1,90 +1,83 @@
+
+import streamlit as st
+import seaborn as sns
 import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 class NaiveBayesModel:
-    def __init__(self, df: pd.DataFrame, target_column: str, test_size: float = 0.2, random_state: int = 42):
+    def __init__(self, x, y, model_type="gaussian", test_size=0.25, random_state=42):
         """
-        Initialize the Naive Bayes model class.
 
         Parameters:
-        - df : preprocessed DataFrame
-        - target_column : name of the target variable
-        - test_size : proportion of test data
-        - random_state : reproducibility
+        - x: feature matrix (NumPy array or sparse matrix)
+        - y: target vector (NumPy array or sparse matrix)
+        - test_size: proportion of test data
+        - random_state : reproducibility seed
         """
-        self.df = df
-        self.target_column = target_column
-        self.test_size = test_size
+        #if x is sparse it'll convert to dense
+        if hasattr(x, "toarray"):
+            x = x.toarray()
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            x, y, test_size=test_size, random_state=random_state
+        )
+        self.model_type = model_type.lower()
+        self.model = None
+        self.y_pred = None
         self.random_state = random_state
 
-        # Separate features and target
-        self.X = self.df.drop(columns=[self.target_column])
-        self.y = self.df[self.target_column]
-
-        # Split data
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            self.X,
-            self.y,
-            test_size=self.test_size,
-            random_state=self.random_state
-        )
-
-        # Model + predictions
-        self.model = None
-        self.predictions = None
-
-
-    def build_model(self, model_type="gaussian"):
-        """
-        Build and train a Naive Bayes model.
-
-        Parameters:
-        - model_type : "gaussian", "multinomial", or "bernoulli"
-
-        Returns:
-        - trained model
-        """
-        if model_type.lower() == "gaussian":
+        #Intialize model
+        if self.model_type == "gaussian":
             self.model = GaussianNB()
-
-        elif model_type.lower() == "multinomial":
+        elif self.model_type == "multinomial":
             self.model = MultinomialNB()
-
-        elif model_type.lower() == "bernoulli":
+        elif self.model_type == "bernoulli":
             self.model = BernoulliNB()
-
         else:
-            raise ValueError("model_type must be: 'gaussian', 'multinomial', or 'bernoulli'")
-
-        self.model.fit(self.X_train, self.y_train)
-        return self.model
+            raise ValueError("model_type must be 'gaussian', 'multinomial', or 'bernoulli'")
 
 
-    def evaluate_model(self):
-        """
-        Evaluate the Naive Bayes model.
+    def train(self):
+        return self.model.fit(self.x_train, self.y_train)
 
-        Returns:
-        A dictionary containing accuracy, confusion matrix, and classification report.
-        """
+    def evaluate(self):
+
         if self.model is None:
-            raise ValueError("Model has not been trained yet. Call build_model() first.")
+            st.error("Model has not been trained yet. Call build_model() first.")
+            return None
 
+        st.subheader("Naive Bayes Model Evaluation")
         # Predictions
-        self.predictions = self.model.predict(self.X_test)
+        self.y_pred = self.model.predict(self.x_test)
 
-        # Metrics
-        accuracy = accuracy_score(self.y_test, self.predictions)
-        report = classification_report(self.y_test, self.predictions, output_dict=False)
-        cm = confusion_matrix(self.y_test, self.predictions)
+        acc =  accuracy_score(self.y_test, self.y_pred)
+        st.write(f"### Accuracy: `{acc:.4f}`")
+        # Classification Report
+        report = classification_report(self.y_test, self.y_pred, output_dict=True)
+        st.write("### Classification Report")
+        st.dataframe(pd.DataFrame(report).T)
+        # Confusion matrix
+        cm = confusion_matrix(self.y_test, self.y_pred)
+        st.write("### Confusion Matrix")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
 
-        results = {
-            "accuracy": accuracy,
-            "classification_report": report,
-            "confusion_matrix": cm,
-        }
 
-        return results
+
+
+
+    def predict(self, new_data):
+        if self.model is None:
+            st.error("Model must be trained before calling predict().")
+            return None
+
+        st.subheader("Prediction on New Data")
+        preds = self.model.predict(new_data)
+        st.dataframe(pd.DataFrame({"Predictions": preds}))
+        return preds

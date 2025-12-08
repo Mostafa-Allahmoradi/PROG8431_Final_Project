@@ -9,57 +9,26 @@ import seaborn as sns
 
 
 class KNNModel:
-    def __init__(self, df, target_column, n_neighbors=5, test_size=0.2, random_state=42):
+    def __init__(self, x, y, n_neighbors=5, test_size=0.25, random_state=42):
         """
         Object-Oriented KNN model class for Streamlit applications.
         Assumes dataframe is already preprocessed before being passed in.
 
         Parameters:
-        - df: pandas DataFrame (preprocessed)
-        - target_column: name of target column
-        - n_neighbors: number of neighbors for KNN
-        - test_size: train/test split ratio
+        - x: feature matrix (NumPy array or sparse matrix)
+        - y: target vector (NumPy array or sparse matrix)
         """
-        self.df = df
-        self.target_column = target_column
-        self.n_neighbors = n_neighbors
-        self.test_size = test_size
-        self.random_state = random_state
-
-        self.model = None
-        self.X_train = None
-        self.X_test = None
-        self.y_train = None
-        self.y_test = None
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            x, y, test_size=test_size, random_state=random_state
+        )
+        self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
         self.y_pred = None
 
     # ------------------------------------------------------
     # TRAINING
     # ------------------------------------------------------
     def train(self):
-        """Train the KNN model."""
-        st.subheader("Training KNN Model")
-
-        if self.target_column not in self.df.columns:
-            st.error(f"Target column '{self.target_column}' not found in dataframe.")
-            return None
-
-        X = self.df.drop(columns=[self.target_column])
-        y = self.df[self.target_column]
-
-        # Train/test split
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y, test_size=self.test_size, random_state=self.random_state
-        )
-
-        # Model initialization & training
-        self.model = KNeighborsClassifier(n_neighbors=self.n_neighbors)
-        self.model.fit(self.X_train, self.y_train)
-
-        st.success(f"KNN model trained with K={self.n_neighbors}")
-
-        return self.model
-
+        return self.model.fit(self.x_train, self.y_train)
     # ------------------------------------------------------
     # EVALUATION
     # ------------------------------------------------------
@@ -69,10 +38,10 @@ class KNNModel:
             st.error("Model is not trained yet. Please train the model first.")
             return None
 
-        st.subheader("Model Evaluation")
+        st.subheader("Model Evaluation:")
 
         # Predictions
-        self.y_pred = self.model.predict(self.X_test)
+        self.y_pred = self.model.predict(self.x_test)
 
         # Accuracy
         acc = accuracy_score(self.y_test, self.y_pred)
@@ -119,10 +88,6 @@ class KNNModel:
 
         preds = self.model.predict(new_data)
 
-        result_df = pd.DataFrame({
-            "Input": new_data.index,
-            "Prediction": preds
-        })
-
-        st.dataframe(result_df)
+        st.dataframe(pd.DataFrame({"Predictions": preds}))
         return preds
+
