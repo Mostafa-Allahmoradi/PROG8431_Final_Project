@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import streamlit as st
 import seaborn as sns
@@ -8,15 +9,23 @@ from sklearn.metrics import classification_report, confusion_matrix, ConfusionMa
 
 
 class SupportVectorMachineModel:
-    def __init__(self, x, y, test_size=0.25, random_state=42):
+    def __init__(self, df, target_col="obesity", features=["calories", "fat" ],test_size=0.25, random_state=42):
     #Uses Support Vector Machine classifier for obesity classification
     #Uses selected features: age, activity level & dietary preference
 
-    # Convert sparse to desne if neede
-        if hasattr(x, "toarray"):
-         x = x.toarray()
+        for f in features:
+            if f not in df.columns:
+                raise ValueError(f"Feature {f} is not present in the dataframe")
+        if target_col not in df.columns:
+            raise ValueError(f"Target column {target_col} is not present in the dataframe")
+
+        self.features = features
+        self.target_col = target_col
+        self.x = df[features].values
+        self.y = df[target_col].values
+
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            x, y, test_size=test_size, random_state=random_state
+            self.x, self.y, test_size=test_size, random_state=random_state, stratify=self.y
         )
         self.model = None
         self.y_pred = None
@@ -28,6 +37,52 @@ class SupportVectorMachineModel:
         #Train SVM model
         self.model = SVC(kernel=kernel, C=c, gamma=gamma, probability=probability)
         self.model.fit(self.x_train, self.y_train)
+
+    def plot_svm_boundary(self):
+        if self.model is None:
+            st.error("Train the model first")
+            return
+
+        if len(self.features) != 2:
+            st.error("Features must have 2 values")
+            return
+        x_plot = self.x_train[:, :2]
+        y_plot = self.y_train
+
+
+        #fit meshgrid
+        x_min, x_max = self.x_train[:, 0].min() - 1, self.x_train[:, 0].max() + 1
+        y_min, y_max = self.x_train[:, 1].min() - 1, self.x_train[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.linspace(x_min, x_max, 500),
+                             np.linspace(y_min, y_max, 500))
+        z = self.model.predict(np.c_[xx.ravel(), yy.ravel()])
+        z = z.reshape(xx.shape)
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.contourf(xx, yy, z, alpha=0.2, cmap="coolwarm")  # decision regions
+
+        #Plot training points
+        scatter = ax.scatter(x_plot[:, 0], x_plot[:, 1], c=y_plot, cmap="coolwarm",
+                             s=50, edgecolor="k",)
+
+        #Highlight support vectors
+        if hasattr(self.model, "decision_function"):
+            zf = self.model.decision_function(np.c_[xx.ravel(), yy.ravel()])
+            zf = zf.reshape(xx.shape)
+            #Decsion boundary
+            ax.contour(xx, yy, zf, levels=[0], colors='k', linewidths=2)
+            ax.contour(xx, yy, zf, levels=[-1, 1], colors='k', linestyles='--', linewidths=1)
+
+            # Highlight support vectors
+            sv = self.model.support_vectors_
+            ax.scatter(sv[:, 0], sv[:, 1], s=100, facecolors='none', edgecolors='k', linewidths=1.5,
+                       label="Support Vectors")
+
+        ax.set_xlabel(self.features[0].capitalize())
+        ax.set_ylabel(self.features[1].capitalize())
+        ax.set_title("SVM Decision Boundary with Margins")
+        ax.legend()
+        st.pyplot(fig)
+
 
     def evaluate(self):
         if self.model is None:

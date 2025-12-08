@@ -273,14 +273,27 @@ elif app_mode == "Machine Learning":
             model.plot_knn_curve(max_k=20)
 
         elif model_selection == "Support Vector Machine":
-            kernel = st.sidebar.selectbox("Kernel",  ["rbf", "linear", "poly", "sigmoid"], index=0)
+            kernel = st.sidebar.selectbox("Kernel",  [ "linear", "rbf", "poly", "sigmoid"], index=0)
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
             gamma_val = st.sidebar.selectbox("Gamma", ["scale", "auto"])
             prob = st.sidebar.checkbox("Enable probability estimates", value=False)
 
+            # Use only selected features for svm
+            svm_features = [ "calories", "fat",]
+            target_col = "obesity"
+            svm_df = x[svm_features].copy()
+            svm_df[target_col] = y.values
+            model = SupportVectorMachineModel(svm_df, target_col=target_col, features=svm_features)
 
-            model = SupportVectorMachineModel(x, y)
+
+            #Train the model
             model.train(kernel=kernel, c=c_val, gamma=gamma_val, probability=prob)
+
+            #plot (first two features)
+            model.plot_svm_boundary()
+            #Eval
+            model.evaluate()
+
             st.subheader(f"Support Vector Machine (kernel={kernel} C={c_val}, gamma={gamma_val})")
 
         elif model_selection == "Decision Trees":
@@ -296,35 +309,21 @@ elif app_mode == "Machine Learning":
             model.plot_tree(feature_names=nutrition_eda.x.columns, class_names=["Non-Obese", "Obese"])
 
 
-
         elif model_selection == "Naive Bayes":
-
             st.sidebar.subheader("Naive Bayes Options")
-
-            # Only use the 3 features we agreed on
-
             nb_features = ["bmi", "calories", "fat"]
-
-            # Initialize Gaussian Naive Bayes
-
-            model = NaiveBayesModel(df=x.join(y),  # Pass the dataframe including target
-
-                                    target_col="obesity",
-
-                                    features=nb_features)
+            #initalize Gaussian NAive BAyes
+            model = NaiveBayesModel(df=x.join(y), target_col="obesity", features = nb_features)
 
             model.train()
+            st.subheader(f"Gaussian Naive Bayes (Features: {",".join(nb_features)})")
 
-            st.subheader(f"Gaussian Naive Bayes (Features: {', '.join(nb_features)})")
-
-            # Evaluate performance
-
+            #Evaluate performance
             model.evaluate()
-
-            # Optional: plot decision boundary using first 2 features
-
+            #plot decision boundary using first 2 features
             if len(nb_features) >= 2:
                 model.plot_decision_boundary()
+
 
 
         elif model_selection == "Random Forest":
