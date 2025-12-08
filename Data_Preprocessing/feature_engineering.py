@@ -81,7 +81,7 @@ class DataPreprocessor:
             (self.df["calories"] > 2500 )& (self.df["activity_level"] < 2), 1, 0
         )
 
-    def build_preprocessor(self, numeric_cols=None, categorical_cols=None, max_text_features=100):
+    def build_preprocessor(self, numeric_cols=None, categorical_cols=None):
         if numeric_cols is None:
             numeric_cols = self.df.select_dtypes(include=np.number).columns.tolist()
             numeric_cols = [c for c in numeric_cols if c != "obesity"]
@@ -89,14 +89,11 @@ class DataPreprocessor:
         if categorical_cols is None:
             categorical_cols = ["activity_level", "dietary_preference"]
 
-        # Combine text columns into one
-        self.df["all_meals"] = self.df[self.text_cols].agg(" ".join, axis=1)
 
         self.preprocessor = ColumnTransformer(
             transformers=[
                 ("num", StandardScaler(), numeric_cols),
                 ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols),
-                ("text", TfidfVectorizer(max_features=max_text_features), "all_meals")
             ]
         )
     def get_feature_name(self):

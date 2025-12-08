@@ -56,7 +56,7 @@ class NutritionEDA:
         self.preprocessor.build_preprocessor(
             numeric_cols=numeric_cols,
             categorical_cols=categorical_cols,
-            max_text_features=100
+
         )
         self.x, self.y = self.preprocessor.prepare_features_and_target(
             feature_cols=[],  # not needed for ColumnTransformer

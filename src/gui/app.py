@@ -296,9 +296,36 @@ elif app_mode == "Machine Learning":
             model.plot_tree(feature_names=nutrition_eda.x.columns, class_names=["Non-Obese", "Obese"])
 
 
+
         elif model_selection == "Naive Bayes":
-            model = NaiveBayesModel(x, y, model_type="gaussian")
-            st.subheader("Gaussian Naive Bayes")
+
+            st.sidebar.subheader("Naive Bayes Options")
+
+            # Only use the 3 features we agreed on
+
+            nb_features = ["bmi", "calories", "fat"]
+
+            # Initialize Gaussian Naive Bayes
+
+            model = NaiveBayesModel(df=x.join(y),  # Pass the dataframe including target
+
+                                    target_col="obesity",
+
+                                    features=nb_features)
+
+            model.train()
+
+            st.subheader(f"Gaussian Naive Bayes (Features: {', '.join(nb_features)})")
+
+            # Evaluate performance
+
+            model.evaluate()
+
+            # Optional: plot decision boundary using first 2 features
+
+            if len(nb_features) >= 2:
+                model.plot_decision_boundary()
+
 
         elif model_selection == "Random Forest":
             n_est = st.sidebar.slider("Number of Trees", 10, 200, 100)
