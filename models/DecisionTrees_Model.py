@@ -2,8 +2,9 @@ import streamlit as st
 import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 class DecisionTreeModel:
@@ -23,6 +24,13 @@ class DecisionTreeModel:
         )
         self.model = DecisionTreeClassifier(max_depth=max_depth, criterion=criterion, random_state=random_state)
         self.y_pred = None
+
+        if isinstance(x, pd.DataFrame):
+            self.feature_names = x.columns.tolist()
+        else:
+            self.feature_names = [f"Feature_{i}" for i in range(x.shape[1])]
+
+
 
     def train(self):
         return self.model.fit(self.x_train, self.y_train)
@@ -61,11 +69,11 @@ class DecisionTreeModel:
         # Feature importance
         if hasattr(self.model, "feature_importances_"):
             importance_df = pd.DataFrame({
-                "Feature": range(self.x_train.shape[1]),  # since x is a matrix
+                "Feature": self.feature_names,  # since x is a matrix
                 "Importance": self.model.feature_importances_
             }).sort_values(by="Importance", ascending=False)
-        st.write("### Feature Importance")
-        st.dataframe(importance_df)
+            st.write("### Feature Importance")
+            st.dataframe(importance_df)
 
         return {
             "accuracy": acc,
@@ -73,6 +81,39 @@ class DecisionTreeModel:
             "confusion_matrix": cm,
             "feature_importance": importance_df if hasattr(self.model, "feature_importances_") else None
         }
+
+    def plot_tree(self, feature_names=None, class_names=None):
+            """Plot the actual decision tree structure."""
+            if self.model is None:
+                st.error("Train the model first to plot the tree.")
+                return
+
+
+            if feature_names is  None:
+                feature_names= [f"Feature_{i}" for i in range(self.x_train.shape[1])]
+            else:
+                feature_names = list(feature_names)
+
+
+
+            if class_names is  None:
+                class_names = ["Non-Obese", "Obese"]
+
+
+
+            st.subheader("Decision Tree Structure")
+            fig, ax = plt.subplots(figsize=(20, 10))
+            plot_tree(
+                self.model,
+                feature_names=feature_names if feature_names else [f"Feature_{i}" for i in
+                                                                   range(self.x_train.shape[1])],
+                class_names=class_names if class_names else ["Non-Obese", "Obese"],
+                filled=True,
+                rounded=True,
+                fontsize=10,
+                ax=ax
+            )
+            st.pyplot(fig)
 
         # ------------------------------------------------------
         # PREDICTION ON NEW DATA

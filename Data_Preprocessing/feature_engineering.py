@@ -99,6 +99,26 @@ class DataPreprocessor:
                 ("text", TfidfVectorizer(max_features=max_text_features), "all_meals")
             ]
         )
+    def get_feature_name(self):
+        feature_names = []
+
+        # Numeric features
+        if "num" in self.preprocessor.named_transformers_:
+            num_features = self.preprocessor.transformers_[0][2] #numeric_cols
+            feature_names.extend(num_features)
+
+        #Categorical features(one hot encoded)
+        if "cat" in self.preprocessor.named_transformers_:
+            ohe = self.preprocessor.named_transformers_["cat"]
+            cat_features = ohe.get_feature_names_out(self.preprocessor.transformers_[1][2])
+            feature_names.extend(cat_features)
+        # Text features (TF-IDF)
+        if "text" in self.preprocessor.named_transformers_:
+            tfidf = self.preprocessor.named_transformers_["text"]
+            text_features = tfidf.get_feature_names_out()
+            feature_names.extend(text_features)
+        return feature_names
+
     #Scaling
     #
     # def scale_features(self, features_col: list):
@@ -113,6 +133,9 @@ class DataPreprocessor:
         #Finalize x_scaled and target vector y
         self.y = self.df[target_col]
         self.x = self.preprocessor.fit_transform(self.df)
+
+        feature_names = self.get_feature_name()
+        self.x = pd.DataFrame(self.x.toarray() if hasattr(self.x, "toarray") else self.x, columns=feature_names)
         return self.x, self.y
 
 

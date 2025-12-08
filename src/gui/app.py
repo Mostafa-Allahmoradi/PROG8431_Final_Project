@@ -279,7 +279,15 @@ elif app_mode == "Machine Learning":
         elif model_selection == "Decision Trees":
             max_d = st.sidebar.slider("Max Depth", 1, 20, 5)
             model = DecisionTreeModel(x, y, max_depth=max_d)
+
             st.subheader(f"Decision Tree (Max Depth={max_d})")
+            # Train and EVAL
+            with st.spinner(f"Training {model_selection}..."):
+                model.train()
+                model.evaluate()
+
+            model.plot_tree(feature_names=nutrition_eda.x.columns, class_names=["Non-Obese", "Obese"])
+
 
         elif model_selection == "Naive Bayes":
             model = NaiveBayesModel(x, y, model_type="gaussian")
@@ -292,10 +300,7 @@ elif app_mode == "Machine Learning":
             st.subheader(f"Random Forest (Trees={n_est}), Max Depth={max_d}")
 
 
-            #Train and EVAL
-        with st.spinner(f"Training {model_selection}..."):
-            model.train()
-            model.evaluate()
+
 
 else:
     st.warning("Please verify dataset availability.")
