@@ -22,6 +22,7 @@ from sklearn.metrics import (
 
 # Model Imports
 from sklearn.linear_model import LogisticRegression
+
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -38,6 +39,7 @@ if project_root not in sys.path:
 
 from Data_Preprocessing.EDA import NutritionEDA
 #created model imports
+from models.LogisticRegression_Model import LogisticRegressionModel
 from models.SupportVectorMachine_Model import SupportVectorMachineModel
 from models.KNN_Model import KNNModel
 from models.RandomForest_Model import RandomForestModel
@@ -248,10 +250,15 @@ elif app_mode == "Machine Learning":
     if x is not None and y is not None:
         # --- Instantiate & Train the Selected Model ---
         if model_selection == "Logistic":
-            from models.LogisticRegression_Model import LogisticRegressionModel
+            #Sidebar for options for hyperparameters
+            c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
+            max_iter_val = st.sidebar.slider("Max. Iterations", 10, 100, 1000)
 
-            model = LogisticRegressionModel(x, y, target_column='obesity')
-            st.subheader("Logistic Regression")
+            #initalize
+            model = LogisticRegressionModel(x, y)
+            model.train(C=c_val, max_iter=max_iter_val)
+
+            st.subheader(f"Logistic Regression (C={c_val}), max_iter={max_iter_val})")
 
         elif model_selection == "K-NN":
             k_neighbors = st.sidebar.slider("Number of Neighbors (K)", 1, 20, 5)
