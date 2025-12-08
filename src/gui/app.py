@@ -230,7 +230,6 @@ elif app_mode == "Machine Learning":
             st.subheader(f"Logistic Regression on BMI (C={c_val}), max_iter={max_iter_val})")
             model.plot_logistic_curve()
             model.evaluate()
-
             # Show probabilistic reasoning
             if use_prob:
                 model.predict_probabilistic()

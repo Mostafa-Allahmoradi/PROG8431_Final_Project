@@ -22,6 +22,8 @@ class NutritionEDA:
         self.x = None
         self.y = None
         self.df = pd.DataFrame()
+        self.numeric_preprocessed_df = None
+        self.raw_bmi =  None
         try:
             self.df = pd.read_csv(file_path)
             st.toast("Dataset loaded successfully!")
@@ -64,6 +66,8 @@ class NutritionEDA:
             target_col='obesity'
         )
         self.df = self.preprocessor.df
+        self.numeric_preprocessed_df = self.df[numeric_cols].copy()
+        self.raw_bmi = self.df["bmi"].copy()
         st.toast("Feature engineering completed!")
     
     def variable_types(self):

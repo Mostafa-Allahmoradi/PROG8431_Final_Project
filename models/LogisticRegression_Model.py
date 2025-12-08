@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -10,24 +11,41 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 
 class LogisticRegressionModel:
-    def __init__(self, x, y, test_size=0.25, random_state=42):
-        # Convert sparse to dense if needed
-        if isinstance(x, pd.DataFrame):
-            x = x[["bmi"]].values
-        elif hasattr(x, "toarray"):
-            x = x.toarray()
-            x = x[:, [0]]
+    def __init__(self, x, y, preprocessed_numeric=None, test_size=0.25, random_state=42):
 
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            x, y, test_size=test_size, random_state=random_state, stratify=y
+        self.scaler = StandardScaler()
+        self.preprocessed_numeric = preprocessed_numeric
+        # Convert sparse to dense if needed
+        if self.preprocessed_numeric is not None:
+            raw_bmi = self.preprocessed_numeric[["bmi"]].values
+        elif isinstance(x, pd.DataFrame):
+            raw_bmi = x[["bmi"]].values
+        elif hasattr(x, "toarray"):
+            raw_bmi = x.toarray()[:, [0]]
+        else:
+            raw_bmi = x[:, [0]]
+
+        self.raw_bmi_full = pd.Series(raw_bmi.flatten(), index=np.arange(len(raw_bmi)))
+        x_scaled = self.scaler.fit_transform(raw_bmi)
+
+
+        self.x_train, self.x_test, self.y_train, self.y_test, self.train_idx, self.test_idx = train_test_split(
+            x_scaled, y, np.arange(len(y)), test_size=test_size, random_state=random_state, stratify=y
         )
         self.model = None
         self.y_pred = None
+
+        self.train_probs = None
+        self.test_probs = None
 
     def train(self, c=1.0, max_iter=1000):
 
         self.model = LogisticRegression(C=c, max_iter=max_iter)
         self.model.fit(self.x_train, self.y_train)
+
+        #Store probabilities for reasoning
+        self.train_probs =  self.model.predict_proba(self.x_train)[:,1]
+        self.test_probs = self.model.predict_proba(self.x_test)[:,1]
 
     def plot_logistic_curve(self):
         if self.model is None:
@@ -94,15 +112,19 @@ class LogisticRegressionModel:
             return None
 
         if new_data is None:
-            data =self.x_test
+            data_scaled =self.x_test
+            bmi_unscaled = self.raw_bmi_full.loc[self.test_idx].values
         else:
             if isinstance(new_data, pd.DataFrame):
-                data = new_data[["bmi"]].values
+                bmi_unscaled = new_data[["bmi"]].values.flatten()
             else:
-                data = np.array(new_data).reshape(-1, 1)
-        probs = self.model.predict_proba(data)[:,1]
+                bmi_unscaled = np.array(new_data).flatten()
 
+            data_scaled = self.scaler.transform(bmi_unscaled.reshape(-1,1))
+        probs = self.model.predict_proba(data_scaled)[:,1]
+
+        #Ensure outputn is clean
         st.subheader("Probabilistic Reasoning of Being Obese")
-        df_probs = pd.DataFrame({"bmi": data.flatten(), "Probability_Obese": probs})
+        df_probs = pd.DataFrame({ "BMI" : bmi_unscaled,"Probability_Obese": probs})
         st.dataframe(df_probs.reset_index(drop=True))
         return df_probs

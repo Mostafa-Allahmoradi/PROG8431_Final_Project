@@ -29,6 +29,7 @@ class DataPreprocessor:
         self.text_cols = ["breakfast_suggestion", "lunch_suggestion",
                           "dinner_suggestion", "snack_suggestion"]
         self.x_scaled = None
+        self.numeric_unscaled_df = None
         #Feature Creation
     def convert_height_meters(self, height_col: str = "height"):
         #Converts height from cm to m
@@ -119,6 +120,7 @@ class DataPreprocessor:
     #Scaling
     #
     def scale_features(self, features_col: list):
+        self.numeric_unscaled_df = self.df[features_col].copy()
         scaler = StandardScaler()
         self.x_scaled = pd.DataFrame(
             scaler.fit_transform(self.df[features_col]), columns=features_col
