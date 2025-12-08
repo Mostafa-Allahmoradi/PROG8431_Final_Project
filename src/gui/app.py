@@ -1,35 +1,9 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 import os
 import sys
-
-# Scikit-Learn Imports
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    ConfusionMatrixDisplay,
-    roc_curve, auc, accuracy_score
-)
-
-# Model Imports
-from sklearn.linear_model import LogisticRegression
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
-
-
 
 # --- PATH SETUP ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -164,13 +138,15 @@ if app_mode == "Data Analysis":
         # Descriptive Stats
         nutrition_eda.overview()
         st.markdown("---")
+
         nutrition_eda.variable_types()
         st.markdown("---")
+        
         nutrition_eda.detect_outliers()
         st.markdown("---")
 
         # Hypothesis Testing
-        st.header("1. Hypothesis Testing")
+        st.header("Hypothesis Testing")
 
         col1, col2 = st.columns(2)
 
@@ -202,31 +178,24 @@ if app_mode == "Data Analysis":
 
         st.markdown("---")
 
-        # Correlation
-        # st.header("2. Correlation Analysis")
-        # numerical_df = df.select_dtypes(include=[np.number])
-        # corr_matrix = numerical_df.corr(method='pearson')
-
-        # fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
-        # sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', linewidths=0.5, ax=ax_corr)
-        # st.pyplot(fig_corr)
         nutrition_eda.correlation_heatmap()
         st.markdown("---")
-        #pca
+
+        # PCA Variance Plot
         nutrition_eda.pca_variance_plot()
         st.markdown("---")
+
         # Histograms'
         nutrition_eda.plot_histograms(feature_list=['calories', 'fat'])
         st.markdown("---")
+
         # Boxplots
         nutrition_eda.boxplots(feature_list=['calories', 'fat'])
         st.markdown("---")
+
         # Obesity Intake Comparison
         nutrition_eda.obesity_intake_comparison()
 
-# -------------------------------------------------------------------------
-# APP MODE: MACHINE LEARNING
-# -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 # APP MODE: MACHINE LEARNING
 # -------------------------------------------------------------------------
@@ -250,11 +219,11 @@ elif app_mode == "Machine Learning":
     if x is not None and y is not None:
         # --- Instantiate & Train the Selected Model ---
         if model_selection == "Logistic":
-            #Sidebar for options for hyperparameters
+            # Sidebar for options for hyperparameters
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
             max_iter_val = st.sidebar.slider("Max. Iterations", 100, 5000, 1000)
             use_prob = st.sidebar.checkbox("Show Probability", value=True) #checkbox
-            #initalize
+            # Initalize
             model = LogisticRegressionModel(x, y)
             model.train(c=c_val, max_iter=max_iter_val)
 
@@ -262,7 +231,7 @@ elif app_mode == "Machine Learning":
             model.plot_logistic_curve()
             model.evaluate()
 
-            #SHow probabilistic reasoning
+            # Show probabilistic reasoning
             if use_prob:
                 model.predict_probabilistic()
 
@@ -289,13 +258,12 @@ elif app_mode == "Machine Learning":
             svm_df[target_col] = y.values
             model = SupportVectorMachineModel(svm_df, target_col=target_col, features=svm_features)
 
-
-            #Train the model
+            # Train the model
             model.train(kernel=kernel, c=c_val, gamma=gamma_val, probability=prob)
 
-            #plot (first two features)
+            # Plot (first two features)
             model.plot_svm_boundary()
-            #Eval
+            # Evaluate
             model.evaluate()
 
             st.subheader(f"Support Vector Machine (kernel={kernel} C={c_val}, gamma={gamma_val})")
@@ -305,7 +273,7 @@ elif app_mode == "Machine Learning":
             model = DecisionTreeModel(x, y, max_depth=max_d)
 
             st.subheader(f"Decision Tree (Max Depth={max_d})")
-            # Train and EVAL
+            # Train and Evaluate
             with st.spinner(f"Training {model_selection}..."):
                 model.train()
                 model.evaluate()
@@ -316,15 +284,17 @@ elif app_mode == "Machine Learning":
         elif model_selection == "Naive Bayes":
             st.sidebar.subheader("Naive Bayes Options")
             nb_features = ["bmi", "calories", "fat"]
-            #initalize Gaussian NAive BAyes
+
+            # Initalize Gaussian Naive Bayes
             model = NaiveBayesModel(df=x.join(y), target_col="obesity", features = nb_features)
 
             model.train()
-            st.subheader(f"Gaussian Naive Bayes (Features: {",".join(nb_features)})")
+            st.subheader(f"Gaussian Naive Bayes (Features: {','.join(nb_features)})")
 
-            #Evaluate performance
+            # Evaluate performance
             model.evaluate()
-            #plot decision boundary using first 2 features
+
+            # Plot decision boundary using first 2 features
             if len(nb_features) >= 2:
                 model.plot_decision_boundary()
 
@@ -337,16 +307,12 @@ elif app_mode == "Machine Learning":
             model = RandomForestModel(df=x.join(y), target_col="obesity", n_estimators=n_est, max_depth=max_d)
             st.subheader(f"Random Forest (Trees={n_est}), Max Depth={max_d}")
 
-            #train model
+            # Train model
             with st.spinner(f"Training {model_selection}..."):
                 model.train()
                 model.evaluate()
 
             model.plot_tree(n_trees=n_plot)
-
-
-
-
 
 else:
     st.warning("Please verify dataset availability.")

@@ -21,6 +21,7 @@ class NutritionEDA:
         self.preprocessor = None
         self.x = None
         self.y = None
+        self.df = pd.DataFrame()
         try:
             self.df = pd.read_csv(file_path)
             st.toast("Dataset loaded successfully!")
@@ -62,6 +63,7 @@ class NutritionEDA:
             feature_cols=[],  # not needed for ColumnTransformer
             target_col='obesity'
         )
+        self.df = self.preprocessor.df
         st.toast("Feature engineering completed!")
     
     def variable_types(self):
@@ -154,12 +156,14 @@ class NutritionEDA:
         return results
 
     def correlation_heatmap(self):
+
         st.subheader("Correlation Heatmap")
 
         numeric_cols = self.df.select_dtypes(include=np.number)
+        corr_matrix = numeric_cols.corr(method='pearson')
 
         fig, ax = plt.subplots(figsize=(12, 8))
-        sns.heatmap(numeric_cols.corr(), cmap="coolwarm", ax=ax)
+        sns.heatmap(corr_matrix, cmap="coolwarm", linewidths=0.5, ax=ax)
         st.pyplot(fig)
 
         return numeric_cols.corr()
