@@ -252,7 +252,7 @@ elif app_mode == "Machine Learning":
         if model_selection == "Logistic":
             #Sidebar for options for hyperparameters
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
-            max_iter_val = st.sidebar.slider("Max. Iterations", 10, 100, 1000)
+            max_iter_val = st.sidebar.slider("Max. Iterations", 100, 5000, 1000)
 
             #initalize
             model = LogisticRegressionModel(x, y)

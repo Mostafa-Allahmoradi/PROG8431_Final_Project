@@ -1,252 +1,87 @@
 import pandas as pd
-import numpy as np
-
+import streamlit as st
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 class LogisticRegressionModel:
-    """a
-    Logistic Regression model for Obese vs Non-Obese classification.
+    def __init__(self, x, y, test_size=0.25, random_state=42):
+        # Convert sparse to dense if needed
+        if hasattr(x, "toarray"):
+            x = x.toarray()
 
-    Designed to work cleanly with your current repo structure without requiring:
-    from Data_Loader... or from Data_Preprocessing...
-
-    You can pass a preprocessed df OR let this class load the CSV.
-    """
-
-    def __init__(
-        self,
-        df: pd.DataFrame = None,
-        data_path: str = "data/raw/detailed_meals_macros_.csv",
-        target_column: str = "obese",
-        test_size: float = 0.2,
-        random_state: int = 42,
-        bmi_threshold: float = 30.0,
-        drop_height_weight_from_X: bool = True
-    ):
-        self.df = df
-        self.data_path = data_path
-        self.target_column = target_column
-        self.test_size = test_size
-        self.random_state = random_state
-        self.bmi_threshold = bmi_threshold
-        self.drop_height_weight_from_X = drop_height_weight_from_X
-
-        self.model = None
-        self.scaler = None
-
-        self.X_train = None
-        self.X_test = None
-        self.y_train = None
-        self.y_test = None
-
-        self.feature_columns_ = None
-
-    # -------------------------
-    # Core pipeline steps
-    # -------------------------
-
-    def load_data(self) -> pd.DataFrame:
-        if self.df is not None:
-            return self.df.copy()
-
-        return pd.read_csv(self.data_path)
-
-    def _normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Lowercase + replace spaces with underscores
-        df = df.copy()
-        df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
-
-        # Handle duplicate-like names such as dinner_protein.1
-        # Make columns unique if pandas auto-added suffixes
-        # (safe no-op if already unique)
-        new_cols = []
-        seen = {}
-        for c in df.columns:
-            if c not in seen:
-                seen[c] = 0
-                new_cols.append(c)
-            else:
-                seen[c] += 1
-                new_cols.append(f"{c}_{seen[c]}")
-        df.columns = new_cols
-
-        return df
-
-    def _create_obesity_label(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Creates BMI + obese label if not already present.
-        Assumes height in cm and weight in kg if available.
-        """
-        df = df.copy()
-
-        if self.target_column in df.columns:
-            return df
-
-        # Try common column names after normalization
-        height_col = "height"
-        weight_col = "weight"
-
-        if height_col in df.columns and weight_col in df.columns:
-            height_m = df[height_col] / 100.0
-            bmi = df[weight_col] / (height_m ** 2)
-
-            df["bmi"] = bmi
-            df[self.target_column] = (df["bmi"] >= self.bmi_threshold).astype(int)
-        else:
-            raise ValueError(
-                f"Cannot create target '{self.target_column}'. "
-                f"Expected columns '{height_col}' and '{weight_col}' to compute BMI."
-            )
-
-        return df
-
-    def _drop_text_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-
-        # Drop any column that looks like suggestion text
-        drop_cols = [c for c in df.columns if "suggestion" in c]
-        # Your dataset also has a "disease" column that looks like goal text
-        if "disease" in df.columns:
-            drop_cols.append("disease")
-
-        existing = [c for c in drop_cols if c in df.columns]
-        if existing:
-            df.drop(columns=existing, inplace=True)
-
-        return df
-
-    def _encode_categoricals(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-
-        # Identify object columns except target
-        cat_cols = [
-            c for c in df.columns
-            if df[c].dtype == "object" and c != self.target_column
-        ]
-
-        if cat_cols:
-            df = pd.get_dummies(df, columns=cat_cols, drop_first=True)
-
-        return df
-
-    def preprocess(self) -> pd.DataFrame:
-        df = self.load_data()
-        df = self._normalize_columns(df)
-        df = df.drop_duplicates()
-
-        # Basic missing-value handling
-        # (We’ll do final numeric fill later)
-        df = df.dropna(subset=[c for c in df.columns if c in ["height", "weight"]], how="any")
-
-        df = self._create_obesity_label(df)
-        df = self._drop_text_columns(df)
-        df = self._encode_categoricals(df)
-
-        # Optionally remove direct BMI inputs from features to reduce leakage
-        if self.drop_height_weight_from_X:
-            for col in ["height", "weight", "bmi"]:
-                if col in df.columns:
-                    # keep them in df for reference if you want,
-                    # but we'll drop from X later in build_features
-                    pass
-
-        # Fill remaining missing numeric with median
-        for c in df.columns:
-            if c != self.target_column and pd.api.types.is_numeric_dtype(df[c]):
-                df[c] = df[c].fillna(df[c].median())
-
-        self.df = df
-        return df
-
-    def build_features(self):
-        if self.df is None:
-            self.preprocess()
-
-        df = self.df.copy()
-
-        y = df[self.target_column].astype(int)
-
-        X = df.drop(columns=[self.target_column])
-
-        if self.drop_height_weight_from_X:
-            for col in ["height", "weight", "bmi"]:
-                if col in X.columns:
-                    X = X.drop(columns=[col])
-
-        # Keep feature names for later reference
-        self.feature_columns_ = X.columns.tolist()
-
-        return X, y
-
-    def split_data(self):
-        X, y = self.build_features()
-
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y,
-            test_size=self.test_size,
-            random_state=self.random_state,
-            stratify=y
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            x, y, test_size=test_size, random_state=random_state, stratify=y
         )
-
-    def build_model(self, C: float = 1.0, max_iter: int = 1000):
-        if self.X_train is None:
-            self.split_data()
-
+        self.model = None
         self.scaler = StandardScaler()
-        X_train_scaled = self.scaler.fit_transform(self.X_train)
-        X_test_scaled = self.scaler.transform(self.X_test)
+        self.y_pred = None
+
+    def train(self, C=1.0, max_iter=1000):
+        # Scale features
+        self.x_train = self.scaler.fit_transform(self.x_train)
+        self.x_test = self.scaler.transform(self.x_test)
 
         self.model = LogisticRegression(C=C, max_iter=max_iter)
-        self.model.fit(X_train_scaled, self.y_train)
+        self.model.fit(self.x_train, self.y_train)
 
-        # Store scaled test for evaluation convenience
-        self._X_test_scaled = X_test_scaled
-
-    def evaluate_model(self):
+    def evaluate(self):
         if self.model is None:
-            self.build_model()
+            st.error("Model has not been trained yet. Call train() first.")
+            return None
 
-        y_pred = self.model.predict(self._X_test_scaled)
+        self.y_pred = self.model.predict(self.x_test)
+        acc = accuracy_score(self.y_test, self.y_pred)
 
-        acc = accuracy_score(self.y_test, y_pred)
-        cm = confusion_matrix(self.y_test, y_pred)
-        report = classification_report(self.y_test, y_pred, target_names=["Non-Obese", "Obese"])
+        st.subheader("Logistic Regression Evaluation")
+        st.write(f"### Accuracy: `{acc:.4f}`")
+
+        report = classification_report(self.y_test, self.y_pred, output_dict=True)
+        st.write("### Classification Report")
+        st.dataframe(pd.DataFrame(report).T)
+
+        cm = confusion_matrix(self.y_test, self.y_pred)
+        st.write("### Confusion Matrix")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
+
+        # Feature coefficients
+        if hasattr(self.model, "coef_"):
+            coef_df = pd.DataFrame({
+                "Feature": [f"Feature_{i}" for i in range(self.x_train.shape[1])],
+                "Coefficient": self.model.coef_.ravel()
+            }).sort_values(by="Coefficient", ascending=False)
+            st.write("### Feature Coefficients")
+            st.dataframe(coef_df)
+        else:
+            coef_df = None
 
         return {
             "accuracy": acc,
+            "classification_report": report,
             "confusion_matrix": cm,
-            "classification_report": report
+            "coefficients": coef_df
         }
 
-    def get_coefficients(self) -> pd.DataFrame:
-        if self.model is None or self.feature_columns_ is None:
-            raise ValueError("Train the model before requesting coefficients.")
+    def predict(self, new_data):
+        if self.model is None:
+            st.error("Model must be trained before calling predict().")
+            return None
 
-        coef = self.model.coef_.ravel()
-        return pd.DataFrame({
-            "feature": self.feature_columns_,
-            "coefficient": coef
-        }).sort_values(by="coefficient", ascending=False)
+        if hasattr(new_data, "toarray"):
+            new_data = new_data.toarray()
 
-    def predict(self, new_df: pd.DataFrame):
-        if self.model is None or self.scaler is None:
-            raise ValueError("Train the model before calling predict().")
+        new_data_scaled = self.scaler.transform(new_data)
+        preds = self.model.predict(new_data_scaled)
 
-        tmp = new_df.copy()
-        tmp = self._normalize_columns(tmp)
-        tmp = self._drop_text_columns(tmp)
-        tmp = self._encode_categoricals(tmp)
+        st.subheader("Prediction on New Data")
+        st.dataframe(pd.DataFrame({"Predictions": preds}))
 
-        # Align columns to training features
-        for col in self.feature_columns_:
-            if col not in tmp.columns:
-                tmp[col] = 0
-
-        tmp = tmp[self.feature_columns_]
-
-        X_scaled = self.scaler.transform(tmp)
-        return self.model.predict(X_scaled)
+        return preds
