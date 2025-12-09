@@ -41,7 +41,7 @@ st.set_page_config(
 st.sidebar.title("Navigation")
 
 # Main Mode Selection
-app_mode = st.sidebar.radio("Go to:", ["Overview", "Problem Statement", "Data Analysis", "Machine Learning", "Model Comparison"])
+app_mode = st.sidebar.radio("Go to:", ["Overview", "Problem Statement", "Data Analysis", "Machine Learning"])
 
 # -------------------------------------------------------------------------
 # Data Loading & Engineering Logic
