@@ -154,10 +154,10 @@ if app_mode == "Data Analysis":
             st.subheader("Fat Intake vs. Obesity")
             group_sick = df[df['obesity'] == 1]['fat']
             group_healthy = df[df['obesity'] == 0]['fat']
-            t_stat, p_val = stats.ttest_ind(group_sick, group_healthy, equal_var=False)
+            t_stat_fat, p_val_fat = stats.ttest_ind(group_sick, group_healthy, equal_var=False)
 
-            st.write(f"**T-statistic:** {t_stat:.4f}")
-            st.write(f"**P-value:** {p_val:.4f}")
+            st.write(f"**T-statistic:** {t_stat_fat:.4f}")
+            st.write(f"**P-value:** {p_val_fat:.4f}")
 
             fig_fat, ax_fat = plt.subplots(figsize=(6, 4))
             sns.boxplot(x='obesity', y='fat', data=df, palette='Set2', hue='obesity', legend=False, ax=ax_fat)
@@ -175,6 +175,18 @@ if app_mode == "Data Analysis":
             fig_cal, ax_cal = plt.subplots(figsize=(6, 4))
             sns.boxplot(x='obesity', y='calories', data=df, palette='Set2', hue='obesity', legend=False, ax=ax_cal)
             st.pyplot(fig_cal)
+
+        threshold = 0.05
+        st.markdown("Based on the p-values obtained from the t-tests, we can draw conclusions regarding our hypotheses:")
+        if p_val_fat < threshold:
+            st.write("**Fat Intake:** Reject the null hypothesis. There is a significant difference in fat intake between obese and non-obese individuals.")
+        else:
+            st.write("**Fat Intake:** Fail to reject the null hypothesis. No significant difference in fat intake between obese and non-obese individuals.")
+
+        if p_val_cal < threshold:
+            st.write("**Calorie Intake:** Reject the null hypothesis. There is a significant difference in calorie intake between obese and non-obese individuals.")
+        else:
+            st.write("**Calorie Intake:** Fail to reject the null hypothesis. No significant difference in calorie intake between obese and non-obese individuals.")
 
         st.markdown("---")
 
