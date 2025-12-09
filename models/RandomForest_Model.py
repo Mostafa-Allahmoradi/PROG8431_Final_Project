@@ -27,7 +27,7 @@ class RandomForestModel:
         # Convert sparse to desne if neede
         if features is None:
             #Default feature set
-            features = ["calories", "fat", "protein", "carbohydrates", "sugar", "fiber", "sodium"]
+            features = ["calories", "fat"]
 
         for f in features:
             if f not in df.columns:
