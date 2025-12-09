@@ -264,7 +264,7 @@ elif app_mode == "Machine Learning":
             model.draw_elbow_plot()
 
         elif model_selection == "Support Vector Machine":
-            kernel = st.sidebar.selectbox("Kernel",  [ "linear", "rbf", "poly", "sigmoid"], index=0)
+            kernel = st.sidebar.selectbox("Kernel",  [ "sigmoid", "linear", "rbf", "poly"], index=0)
             c_val = st.sidebar.slider("C (Regularization)", 0.01, 10.0, 1.0)
             gamma_val = st.sidebar.selectbox("Gamma", ["scale", "auto"])
             prob = st.sidebar.checkbox("Enable probability estimates", value=False)
