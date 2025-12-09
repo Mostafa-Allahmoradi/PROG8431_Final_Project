@@ -190,6 +190,11 @@ if app_mode == "Data Analysis":
 
         st.markdown("---")
 
+        # Chi-Squared Test for Categorical Variables
+        st.write("### Chi-Squared Test Results:")
+        chi_squared_result = nutrition_eda.chi_squared_test()
+        st.markdown("---")
+
         nutrition_eda.correlation_heatmap()
         st.markdown("---")
 
@@ -255,6 +260,8 @@ elif app_mode == "Machine Learning":
                 model.train()
                 model.evaluate()
             model.plot_knn_curve(max_k=20)
+
+            model.draw_elbow_plot()
 
         elif model_selection == "Support Vector Machine":
             kernel = st.sidebar.selectbox("Kernel",  [ "linear", "rbf", "poly", "sigmoid"], index=0)

@@ -111,4 +111,22 @@ class KNNModel:
 
         st.dataframe(pd.DataFrame({"Predictions": preds}))
         return preds
+    
+    def draw_elbow_plot(self, max_k=20):
+        st.subheader("Elbow Method for Optimal K")
+        sse = []
+
+        for k in range(1, max_k + 1):
+            temp_model = KNeighborsClassifier(n_neighbors=k)
+            temp_model.fit(self.x_train, self.y_train)
+            preds = temp_model.predict(self.x_test)
+            sse.append(np.sum((self.y_test - preds) ** 2))
+
+        fig, ax = plt.subplots()
+        ax.plot(range(1, max_k + 1), sse, marker="o")
+        ax.set_xlabel("Number of Neighbors (K)")
+        ax.set_ylabel("Sum of Squared Errors (SSE)")
+        ax.set_title("Elbow Method for Optimal K")
+
+        st.pyplot(fig)
 

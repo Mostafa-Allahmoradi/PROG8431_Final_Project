@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+from scipy.stats import chi2_contingency
+
 import os
 import sys
 
@@ -196,6 +198,28 @@ class NutritionEDA:
         st.pyplot(fig)
 
         return pca.explained_variance_ratio_
+    
+    def chi_squared_test(self):
+
+        columns = ["fat", "calories"]
+        results = {}
+
+        for col in columns:
+            contingency_table = pd.crosstab(self.df[col], self.df['obesity'])
+            chi2, p, dof, ex = chi2_contingency(contingency_table)
+            results[col] = {'chi2_statistic': chi2, 'p_value': p}
+
+            st.write(f"#### Chi-Squared Test for {col} vs Obesity")
+            st.write(f"Statistic:{chi2:.4f}")
+            st.write(f"P-value: {p:.4f}")
+
+            threshold = 0.05
+            if p < threshold:
+                st.write(f"Result: Significant dependency between {col} and obesity (reject H0)")
+            else:
+                st.write(f"Result: No significant dependency between {col} and obesity (fail to reject H0)")
+
+        return results
 
     
 
