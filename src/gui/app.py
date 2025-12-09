@@ -314,4 +314,5 @@ elif app_mode == "Machine Learning":
             model.plot_tree(n_trees=n_plot)
 
 else:
-    st.warning("Please verify dataset availability.")
+    if app_mode != "Overview" and app_mode != "Problem Statement":
+        st.warning("Please verify dataset availability.")
