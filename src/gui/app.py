@@ -313,11 +313,5 @@ elif app_mode == "Machine Learning":
 
             model.plot_tree(n_trees=n_plot)
 
-# -------------------------------------------------------------------------
-# APP MODE: MODEL COMPARISON
-# -------------------------------------------------------------------------
-elif app_mode == "Model Comparison":
-    st.title("Model Comparison")
-
 else:
     st.warning("Please verify dataset availability.")
