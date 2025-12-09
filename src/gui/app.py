@@ -222,7 +222,7 @@ elif app_mode == "Machine Learning":
             "Logistic",
             "K-NN",
             "Support Vector Machine",
-            "Decision Trees",
+            # "Decision Trees",
             "Naive Bayes",
             "Random Forest"
         ]
@@ -279,17 +279,17 @@ elif app_mode == "Machine Learning":
 
             st.subheader(f"Support Vector Machine (kernel={kernel} C={c_val}, gamma={gamma_val})")
 
-        elif model_selection == "Decision Trees":
-            max_d = st.sidebar.slider("Max Depth", 1, 20, 5)
-            model = DecisionTreeModel(x, y, max_depth=max_d)
-
-            st.subheader(f"Decision Tree (Max Depth={max_d})")
-            # Train and Evaluate
-            with st.spinner(f"Training {model_selection}..."):
-                model.train()
-                model.evaluate()
-
-            model.plot_tree(feature_names=nutrition_eda.x.columns, class_names=["Non-Obese", "Obese"])
+        # elif model_selection == "Decision Trees":
+        #     max_d = st.sidebar.slider("Max Depth", 1, 20, 5)
+        #     model = DecisionTreeModel(x, y, max_depth=max_d)
+        #
+        #     st.subheader(f"Decision Tree (Max Depth={max_d})")
+        #     # Train and Evaluate
+        #     with st.spinner(f"Training {model_selection}..."):
+        #         model.train()
+        #         model.evaluate()
+        #
+        #     model.plot_tree(feature_names=nutrition_eda.x.columns, class_names=["Non-Obese", "Obese"])
 
 
         elif model_selection == "Naive Bayes":
@@ -312,9 +312,9 @@ elif app_mode == "Machine Learning":
 
 
         elif model_selection == "Random Forest":
-            n_est = st.sidebar.slider("Number of Trees", 2, 10, 5)
-            max_d = st.sidebar.slider("Max Depth", 1, 10, 5)
-            n_plot = st.sidebar.slider("Number of Trees to visualize", 1)
+            n_est = st.sidebar.slider("Number of Trees", 3, 10, 5)
+            max_d = st.sidebar.slider("Max Depth", 1, 10, 3)
+            n_plot = st.sidebar.slider("Number of Trees to visualize", 1, n_est, 1)
             model = RandomForestModel(df=x.join(y), target_col="obesity", n_estimators=n_est, max_depth=max_d)
             st.subheader(f"Random Forest (Trees={n_est}), Max Depth={max_d}")
 

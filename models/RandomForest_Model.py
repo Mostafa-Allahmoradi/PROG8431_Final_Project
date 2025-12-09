@@ -50,28 +50,32 @@ class RandomForestModel:
 
         return self.model
 
-    def plot_tree(self, n_trees=7):
+    def plot_tree(self, n_trees=1, max_depth=3):
         if self.model is None:
             st.error("Train the model first to plot")
             return
+
         n_trees = min(n_trees, len(self.model.estimators_))
-        st.subheader(f"Random Forest: Visualizing {n_trees} Trees")
+        st.subheader(f"Random Forest: Visualizing {n_trees} Trees (Max Depth={max_depth})")
 
         for i in range(n_trees):
-            fig, ax = plt.subplots(figsize=(20, 10))
+            fig, ax = plt.subplots(figsize=(18, 8))
+
             plot_tree(
                 self.model.estimators_[i],
                 feature_names=self.features,
                 class_names=[str(c) for c in self.model.classes_],
                 filled=True,
                 rounded=True,
-                proportion=True,
-                fontsize=10,
+                proportion=False,
+                max_depth=max_depth,
+                impurity=False,
+                fontsize=8,
                 ax=ax
             )
+
             ax.set_title(f"Tree {i + 1} of {len(self.model.estimators_)}")
             st.pyplot(fig)
-
 
     def evaluate(self):
 
