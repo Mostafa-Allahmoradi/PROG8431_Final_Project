@@ -53,7 +53,7 @@ class NutritionEDA:
         self.preprocessor.calculate_bmi()
         self.preprocessor.add_obesity_features()
         self.preprocessor.encode_categorical_features()
-        numeric_cols = ['calories', 'protein', 'fat', 'sugar', 'sodium',
+        numeric_cols = ["ages", 'calories', 'protein', 'fat', 'sugar', 'sodium',
                         'carbohydrates', 'fiber', 'height_m', 'weight', 'bmi']
         categorical_cols = ['activity_level', 'dietary_preference']
         self.preprocessor.build_preprocessor(
